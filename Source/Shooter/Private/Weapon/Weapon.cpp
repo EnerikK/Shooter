@@ -2,10 +2,10 @@
 
 
 #include "Weapon/Weapon.h"
-
 #include "Character/ShooterCharacter.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Net/UnrealNetwork.h"
 
 
 
@@ -53,23 +53,52 @@ void AWeapon::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 }
-void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	AShooterCharacter* ShooterCharacter = Cast<AShooterCharacter>(OtherActor);
-	if(ShooterCharacter)
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AWeapon,WeaponState);
+}
+
+void AWeapon::SetWeaponState(EWeaponState State)
+{
+	WeaponState = State;
+	switch (WeaponState)
 	{
-		ShooterCharacter->SetOverlappingWeapon(this);
+	case EWeaponState::EW_Equipped:
+		ShowPickUpWidget(false);
+		GetPickUpSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		break;
+	}
+}
+
+void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+                              UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	AShooterCharacter* Character = Cast<AShooterCharacter>(OtherActor);
+	if(Character)
+	{
+		Character->SetOverlappingWeapon(this);
 	}
 }
 
 void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	AShooterCharacter* ShooterCharacter = Cast<AShooterCharacter>(OtherActor);
-	if(ShooterCharacter)
+	AShooterCharacter* Character = Cast<AShooterCharacter>(OtherActor);
+	if(Character)
 	{
-		ShooterCharacter->SetOverlappingWeapon(nullptr);
+		Character->SetOverlappingWeapon(nullptr);
+	}
+}
+void AWeapon::OnRep_WeaponState()
+{
+	switch (WeaponState)
+	{
+		case EWeaponState::EW_Equipped:
+			ShowPickUpWidget(false);
+			/*PickUpSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);*/
+		break;
+		
 	}
 	
 }

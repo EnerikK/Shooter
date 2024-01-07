@@ -3,10 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InputActionValue.h"
 #include "GameFramework/PlayerController.h"
 #include "ShooterPlayerController.generated.h"
 
 
+class AWeapon;
+class AShooterCharacter;
+class UCombatComponent;
 struct FInputActionValue;
 class UInputMappingContext;
 class UInputAction;
@@ -23,6 +27,7 @@ public:
 	AShooterPlayerController();
 	virtual void Tick(float DeltaSeconds) override;
 
+
 protected:
 
 	virtual void BeginPlay() override;
@@ -30,6 +35,9 @@ protected:
 
 private:
 
+	UPROPERTY(VisibleAnywhere)
+	UCombatComponent* Combat;
+	
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputMappingContext> PlayerContext;
 
@@ -42,10 +50,22 @@ private:
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> JumpAction;
 
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> EquipAction;
+
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> CrouchAction;
+	
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> AimAction;
+
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void Jump(const FInputActionValue& Value);
-	
+	void Equip(const FInputActionValue& Value);
+	void Crouch(const FInputActionValue& Value);
+	void Aim(const FInputActionValue& Value);
+
 };
 
 

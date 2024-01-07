@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "ShooterCharacter.generated.h"
 
+class UCombatComponent;
 class AWeapon;
 class UCameraComponent;
 class USpringArmComponent;
@@ -21,9 +22,15 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void PostInitializeComponents() override;
+	void EquipButtonPressed();
+	void CrouchButtonPressed();
+	void AimButtonPressed();
 
 	
 	void SetOverlappingWeapon(AWeapon* Weapon);
+	bool IsWeaponEquipped();
+	bool IsAiming();
 
 protected:
 	
@@ -37,11 +44,17 @@ private:
 	UPROPERTY(VisibleAnywhere,Category="Camera")
 	UCameraComponent* FollowCamera;
 
+	UPROPERTY(VisibleAnywhere)
+	UCombatComponent* Combat;
+	
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
 	AWeapon* OverlappingWeapon;
-
+	
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
+
+	UFUNCTION(Server,Reliable)
+	void ServerEquipButtonPressed();
 	
 
 };

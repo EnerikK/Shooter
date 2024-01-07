@@ -4,14 +4,16 @@
 #include "Shooter/Public/Player/ShooterPlayerController.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Character/ShooterCharacter.h"
 #include "GameFramework/Character.h"
+
+
 
 
 AShooterPlayerController::AShooterPlayerController()
 {
 	bReplicates = true;
 }
-
 void AShooterPlayerController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -40,9 +42,17 @@ void AShooterPlayerController::SetupInputComponent()
 		
 	EnhancedInputComponent->BindAction(
 		JumpAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Jump);
+
+	EnhancedInputComponent->BindAction(
+		EquipAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Equip);
+
+	EnhancedInputComponent->BindAction(
+	CrouchAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Crouch);
+	
+	EnhancedInputComponent->BindAction(
+	AimAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Aim);
 	
 }
-
 void AShooterPlayerController::Move(const FInputActionValue& Value)
 {
 	// input is a Vector2D
@@ -94,12 +104,29 @@ void AShooterPlayerController::Look(const FInputActionValue& Value)
 		}
 	}
 }
-
 void AShooterPlayerController::Jump(const FInputActionValue& Value)
 {
 	if(ACharacter* ControlledCharacter = GetPawn<ACharacter>())
 	{
 		ControlledCharacter->Jump();
 	}
+}
+void AShooterPlayerController::Equip(const FInputActionValue& Value)
+{
+	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
+	ControlledCharacter->EquipButtonPressed();
+}
+
+void AShooterPlayerController::Crouch(const FInputActionValue& Value)
+{
+	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
+	ControlledCharacter->CrouchButtonPressed();
+	
+}
+
+void AShooterPlayerController::Aim(const FInputActionValue& Value)
+{
+	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
+	ControlledCharacter->AimButtonPressed();
 }
 	

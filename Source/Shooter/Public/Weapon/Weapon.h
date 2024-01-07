@@ -25,11 +25,15 @@ class SHOOTER_API AWeapon : public AActor
 {
 	GENERATED_BODY()
 	
-public:	
+public:
+	
 	AWeapon();
 	virtual void Tick(float DeltaTime) override;
 	void ShowPickUpWidget(bool bShowWidget);
-
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
+	FORCEINLINE void SetWeaponState(EWeaponState State);
+	FORCEINLINE USphereComponent* GetPickUpSphere() const {return PickUpSphere;}
 protected:
 	
 	virtual void BeginPlay() override;
@@ -49,8 +53,11 @@ private:
 	UPROPERTY(VisibleAnywhere,Category="Weapon Properties")
 	USphereComponent* PickUpSphere;
 
-	UPROPERTY(VisibleAnywhere,Category="Weapon Properties")
+	UPROPERTY(ReplicatedUsing = OnRep_WeaponState,VisibleAnywhere,Category="Weapon Properties")
 	EWeaponState WeaponState;
+
+	UFUNCTION()
+	void OnRep_WeaponState();
 
 	UPROPERTY(VisibleAnywhere,Category="Weapon Properties")
 	UWidgetComponent* PickUpWidget;
