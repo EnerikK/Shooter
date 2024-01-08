@@ -59,12 +59,16 @@ private:
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> AimAction;
 
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> ReleaseAimAction;
+
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void Jump(const FInputActionValue& Value);
 	void Equip(const FInputActionValue& Value);
 	void Crouch(const FInputActionValue& Value);
 	void Aim(const FInputActionValue& Value);
+	void ReleaseAim(const FInputActionValue& Value);
 
 };
 

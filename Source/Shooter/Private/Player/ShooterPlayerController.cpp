@@ -51,6 +51,9 @@ void AShooterPlayerController::SetupInputComponent()
 	
 	EnhancedInputComponent->BindAction(
 	AimAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Aim);
+
+	EnhancedInputComponent->BindAction(
+	ReleaseAimAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::ReleaseAim);
 	
 }
 void AShooterPlayerController::Move(const FInputActionValue& Value)
@@ -128,5 +131,11 @@ void AShooterPlayerController::Aim(const FInputActionValue& Value)
 {
 	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
 	ControlledCharacter->AimButtonPressed();
+}
+
+void AShooterPlayerController::ReleaseAim(const FInputActionValue& Value)
+{
+	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
+	ControlledCharacter->AimButtonReleased();
 }
 	
