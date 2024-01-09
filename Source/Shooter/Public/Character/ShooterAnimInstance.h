@@ -6,6 +6,7 @@
 #include "Animation/AnimInstance.h"
 #include "ShooterAnimInstance.generated.h"
 
+class AWeapon;
 class AShooterCharacter;
 /**
  * 
@@ -34,6 +35,8 @@ private:
 	UPROPERTY(BlueprintReadOnly,Category="Movement",meta=(AllowPrivateAccess = "true"))
 	bool bWeaponEquipped;
 
+	AWeapon* EquippedWeapon;
+
 	UPROPERTY(BlueprintReadOnly,Category="Movement",meta=(AllowPrivateAccess = "true"))
 	bool bIsAccelerating;
 
@@ -49,9 +52,16 @@ private:
 	UPROPERTY(BlueprintReadOnly,Category="Movement",meta=(AllowPrivateAccess = "true"))
 	float Lean;
 
+	UPROPERTY(BlueprintReadOnly,Category="Movement",meta=(AllowPrivateAccess = "true"))
+	float AO_Yaw;
+
+	UPROPERTY(BlueprintReadOnly,Category="Movement",meta=(AllowPrivateAccess = "true"))
+	float AO_Pitch;
+
+	UPROPERTY(BlueprintReadOnly,Category="Movement",meta=(AllowPrivateAccess = "true"))
+	FTransform LeftHandTransform;
+	
 	FRotator CharacterRotationLastFrame;
 	FRotator CharacterRotation;
 	FRotator DeltaRotation;
-	
-	
 };

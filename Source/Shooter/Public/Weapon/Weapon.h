@@ -34,6 +34,7 @@ public:
 	
 	FORCEINLINE void SetWeaponState(EWeaponState State);
 	FORCEINLINE USphereComponent* GetPickUpSphere() const {return PickUpSphere;}
+	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh()const {return WeaponMesh;}
 protected:
 	
 	virtual void BeginPlay() override;

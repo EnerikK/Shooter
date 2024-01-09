@@ -6,6 +6,7 @@
 #include "Components/CombatComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "Weapon/Weapon.h"
 
@@ -41,12 +42,57 @@ void AShooterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME_CONDITION(AShooterCharacter,OverlappingWeapon,COND_OwnerOnly);
 	
 }
-void AShooterCharacter::BeginPlay()
- {
- 	Super::BeginPlay();
- 	
- }
 
+AWeapon* AShooterCharacter::GetEquippedWeapon()
+{
+	if(Combat == nullptr) return nullptr;
+	return Combat->EquippedWeapon;
+}
+
+void AShooterCharacter::BeginPlay()
+{
+ 	Super::BeginPlay();
+}
+void AShooterCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	AimOffset(DeltaTime);
+	
+}
+void AShooterCharacter::AimOffset(float DeltaTime)
+{
+	//There's a Bug on the Yaw when you use it on Multiplayer Fix when you can if  you can future me
+	if (Combat && Combat->EquippedWeapon == nullptr) return;
+	FVector Velocity = GetVelocity();
+	Velocity.Z = 0.f;
+	float Speed = Velocity.Size();
+	bool bIsInAir = GetCharacterMovement()->IsFalling();
+
+	if (Speed == 0.f && !bIsInAir) // standing still, not jumping
+	{
+		FRotator CurrentAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
+		FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(CurrentAimRotation, StartingAimRotation);
+		AO_Yaw = DeltaAimRotation.Yaw;
+		bUseControllerRotationYaw = false;
+	}
+	if (Speed > 0.f || bIsInAir && !IsLocallyControlled() ) // running, or jumping
+	{
+		StartingAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
+		AO_Yaw = 0.f;
+		bUseControllerRotationYaw = true;
+	}
+	AO_Pitch = GetBaseAimRotation().Pitch;
+	if (AO_Pitch > 90.f && !IsLocallyControlled())
+	{
+		//found out that when i try to pitch downwards thepitch goes from 360 to 270 it should be 0 to -90 so we MAP pitch from [270,360) to [-90,0)
+		FVector2D InRange(270.f, 360.f);
+		FVector2D OutRange(-90.f, 0.f);
+		//Apply Correction
+		AO_Pitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, AO_Pitch);
+	}
+	
+}
 void AShooterCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
@@ -109,9 +155,7 @@ void AShooterCharacter::CrouchButtonPressed()
 	{
 		Crouch();
 	}
-	
 }
-
 void AShooterCharacter::AimButtonPressed()
 {
 	if(Combat)
@@ -128,7 +172,6 @@ void AShooterCharacter::AimButtonReleased()
 	{
 		Combat->SetAiming(false);
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Released!"));	
-		
 	}
 }
 
@@ -152,11 +195,6 @@ void AShooterCharacter::ServerEquipButtonPressed_Implementation()
 	}
 }
 
-void AShooterCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-	
-}
 void AShooterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
