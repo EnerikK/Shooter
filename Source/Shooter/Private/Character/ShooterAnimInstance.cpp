@@ -33,6 +33,7 @@ void UShooterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	EquippedWeapon = Character->GetEquippedWeapon();
 	bIsCrouched = Character->bIsCrouched;
 	bAiming = Character->IsAiming();
+	TurningInPlace = Character->GetTurningInPlace();
 
 	//OffSet for strafing
 	FRotator AimRotation = Character->GetBaseAimRotation();

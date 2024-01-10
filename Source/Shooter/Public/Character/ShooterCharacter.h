@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Shooter/Types/TurnInPlace.h"
 #include "ShooterCharacter.generated.h"
 
 class UCombatComponent;
@@ -23,11 +24,14 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
+	void PlayFireMontage(bool bAiming);
 	
 	void EquipButtonPressed();
 	void CrouchButtonPressed();
 	void AimButtonPressed();
 	void AimButtonReleased();
+	void FireButtonPressed();
+	void FireButtonReleased();
 	
 	void SetOverlappingWeapon(AWeapon* Weapon);
 	bool IsWeaponEquipped();
@@ -35,6 +39,8 @@ public:
 	FORCEINLINE float GetAO_Yaw() const {return AO_Yaw;}
 	FORCEINLINE float GetAO_Pitch() const {return  AO_Pitch;}
 	AWeapon* GetEquippedWeapon();
+
+	FORCEINLINE ETurnInPlace GetTurningInPlace() const {return TurningInPlace;}
 
 protected:
 	
@@ -62,8 +68,15 @@ private:
 	void ServerEquipButtonPressed();
 
 	float AO_Yaw;
+	float InterpAO_Yaw;
 	float AO_Pitch;
 	FRotator StartingAimRotation;
+
+	ETurnInPlace TurningInPlace;
+	void TurnInPlace(float DeltaTime);
+
+	UPROPERTY(EditAnywhere , Category= "Combat")
+	UAnimMontage* FireWeaponMontage;
 	
 
 };

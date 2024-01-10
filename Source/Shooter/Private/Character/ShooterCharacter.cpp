@@ -14,6 +14,8 @@
 AShooterCharacter::AShooterCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	NetUpdateFrequency = 66.f;
+	MinNetUpdateFrequency = 33.f;
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetMesh());
@@ -33,6 +35,8 @@ AShooterCharacter::AShooterCharacter()
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera,ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera,ECR_Ignore);
+
+	TurningInPlace = ETurnInPlace::ETurnIP_NotTurning;
 	
 }
 void AShooterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -74,13 +78,19 @@ void AShooterCharacter::AimOffset(float DeltaTime)
 		FRotator CurrentAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
 		FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(CurrentAimRotation, StartingAimRotation);
 		AO_Yaw = DeltaAimRotation.Yaw;
-		bUseControllerRotationYaw = false;
+		if(TurningInPlace == ETurnInPlace::ETurnIP_NotTurning)
+		{
+			InterpAO_Yaw = AO_Yaw;
+		}
+		bUseControllerRotationYaw = true;
+		TurnInPlace(DeltaTime);
 	}
-	if (Speed > 0.f || bIsInAir && !IsLocallyControlled() ) // running, or jumping
+	if (Speed > 0.f || bIsInAir) // running, or jumping
 	{
 		StartingAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
 		AO_Yaw = 0.f;
 		bUseControllerRotationYaw = true;
+		TurningInPlace = ETurnInPlace::ETurnIP_NotTurning;
 	}
 	AO_Pitch = GetBaseAimRotation().Pitch;
 	if (AO_Pitch > 90.f && !IsLocallyControlled())
@@ -101,6 +111,20 @@ void AShooterCharacter::PostInitializeComponents()
 		Combat->Character = this;
 	}
 	
+}
+
+void AShooterCharacter::PlayFireMontage(bool bAiming)
+{
+	if(Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+	
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if(AnimInstance && FireWeaponMontage)
+	{
+		AnimInstance->Montage_Play(FireWeaponMontage);
+		FName SectionName;
+		SectionName = bAiming ? FName("RifleAim") : FName("RifleHip");
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
 }
 
 void AShooterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
@@ -175,6 +199,27 @@ void AShooterCharacter::AimButtonReleased()
 	}
 }
 
+void AShooterCharacter::FireButtonPressed()
+{
+	if(Combat)
+	{
+		Combat->FireButtonPressed(true);
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Firing!"));	
+
+	}
+	
+}
+
+void AShooterCharacter::FireButtonReleased()
+{
+	if(Combat)
+	{
+		Combat->FireButtonPressed(false);
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Stopped!"));	
+
+	}
+}
+
 void AShooterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 {
 	if(OverlappingWeapon)
@@ -184,6 +229,29 @@ void AShooterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 	if(LastWeapon)
 	{
 		LastWeapon->ShowPickUpWidget(false);
+	}
+}
+
+void AShooterCharacter::TurnInPlace(float DeltaTime)
+{
+	if(AO_Yaw > 90.f)
+	{
+		TurningInPlace = ETurnInPlace::ETurnIP_Right;
+	}
+	else if (AO_Yaw < -90.f)
+	{
+		TurningInPlace = ETurnInPlace::ETurnIP_Left;
+	}
+	if(TurningInPlace != ETurnInPlace::ETurnIP_NotTurning)
+	{
+		InterpAO_Yaw = FMath::FInterpTo(InterpAO_Yaw,0.f,DeltaTime,4.f);
+		AO_Yaw = InterpAO_Yaw;
+		if(FMath::Abs(AO_Yaw) < 15.f)
+		{
+			TurningInPlace = ETurnInPlace::ETurnIP_NotTurning;
+			StartingAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
+			
+		}
 	}
 }
 

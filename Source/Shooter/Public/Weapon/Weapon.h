@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Animation/AnimationAsset.h"
 #include "Weapon.generated.h"
 
 class UWidgetComponent;
@@ -31,6 +32,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	void ShowPickUpWidget(bool bShowWidget);
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	void Fire();
 	
 	FORCEINLINE void SetWeaponState(EWeaponState State);
 	FORCEINLINE USphereComponent* GetPickUpSphere() const {return PickUpSphere;}
@@ -62,5 +64,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere,Category="Weapon Properties")
 	UWidgetComponent* PickUpWidget;
+
+	UPROPERTY(EditAnywhere , Category = "Weapon Properties")
+	UAnimationAsset* FireAnimation;
 	
 };
