@@ -7,6 +7,7 @@
 #include "Animation/AnimationAsset.h"
 #include "Weapon.generated.h"
 
+class AAmmoEject;
 class UWidgetComponent;
 class USphereComponent;
 
@@ -32,7 +33,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	void ShowPickUpWidget(bool bShowWidget);
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	void Fire();
+	virtual void Fire(const FVector& HitTarget);
 	
 	FORCEINLINE void SetWeaponState(EWeaponState State);
 	FORCEINLINE USphereComponent* GetPickUpSphere() const {return PickUpSphere;}
@@ -67,5 +68,8 @@ private:
 
 	UPROPERTY(EditAnywhere , Category = "Weapon Properties")
 	UAnimationAsset* FireAnimation;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AAmmoEject> AmmoClass;
 	
 };

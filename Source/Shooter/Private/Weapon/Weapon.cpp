@@ -8,7 +8,9 @@
 #include "Animation/AnimationAsset.h"
 #include "Net/UnrealNetwork.h"
 #include "Components/SkeletalMeshComponent.h"
-
+#include "Engine/SkeletalMeshSocket.h"
+#include "Weapon/AmmoEject.h"
+#include "Weapon/Projectile.h"
 
 
 AWeapon::AWeapon()
@@ -61,11 +63,28 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	DOREPLIFETIME(AWeapon,WeaponState);
 }
 
-void AWeapon::Fire()
+void AWeapon::Fire(const FVector& HitTarget)
 {
 	if(FireAnimation)
 	{
 		WeaponMesh->PlayAnimation(FireAnimation,false);
+	}
+	if(AmmoClass)
+	{
+		const USkeletalMeshSocket* AmmoEjectSocket = WeaponMesh->GetSocketByName(FName("AmmoEject"));
+		if(AmmoEjectSocket)
+		{
+			FTransform SocketTransform = AmmoEjectSocket->GetSocketTransform(WeaponMesh);
+			UWorld* World = GetWorld();
+			if(World)
+			{
+				World->SpawnActor<AAmmoEject>(
+					AmmoClass,
+					SocketTransform.GetLocation(),
+					SocketTransform.GetRotation().Rotator()
+				);
+			}
+		}
 	}
 }
 
