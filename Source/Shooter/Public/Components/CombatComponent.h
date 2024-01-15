@@ -8,6 +8,7 @@
 
 #define TRACE 80000.f
 
+class AShooterHUD;
 class AWeapon;
 class AShooterPlayerController;
 class AShooterCharacter;
@@ -21,7 +22,6 @@ public:
 	
 	UCombatComponent();
 	friend AShooterCharacter;
-	friend AShooterPlayerController;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -48,10 +48,16 @@ protected:
 	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
 
 	void TraceUnderCrosshair(FHitResult& TraceHitResult);
+
+	void SetHudCrosshair(float DeltaTime);
 	
 private:
 	
 	AShooterCharacter* Character;
+
+	AShooterPlayerController* Controller;
+
+	AShooterHUD* Hud;
 	
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
@@ -68,6 +74,13 @@ private:
 	bool bFireButtonPressed;
 
 	FVector HitTarget;
+
+	/*
+	 * Crosshair
+	 */
+
+	float CrosshairVelocity;
+	float CrosshairInAir;
 	
 	
 };

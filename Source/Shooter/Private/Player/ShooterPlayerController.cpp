@@ -122,26 +122,22 @@ void AShooterPlayerController::Equip(const FInputActionValue& Value)
 	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
 	ControlledCharacter->EquipButtonPressed();
 }
-
 void AShooterPlayerController::Crouch(const FInputActionValue& Value)
 {
 	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
 	ControlledCharacter->CrouchButtonPressed();
 	
 }
-
 void AShooterPlayerController::Aim(const FInputActionValue& Value)
 {
 	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
 	ControlledCharacter->AimButtonPressed();
 }
-
 void AShooterPlayerController::ReleaseAim(const FInputActionValue& Value)
 {
 	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
 	ControlledCharacter->AimButtonReleased();
 }
-
 void AShooterPlayerController::Fire(const FInputActionValue& Value)
 {
 	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());

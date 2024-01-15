@@ -10,6 +10,7 @@
 class AAmmoEject;
 class UWidgetComponent;
 class USphereComponent;
+class UTexture2D;
 
 UENUM(BlueprintType)
 enum class EWeaponState : uint8
@@ -38,6 +39,26 @@ public:
 	FORCEINLINE void SetWeaponState(EWeaponState State);
 	FORCEINLINE USphereComponent* GetPickUpSphere() const {return PickUpSphere;}
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh()const {return WeaponMesh;}
+
+	/*
+	* Texture for the cross-hairs
+	*/
+
+	UPROPERTY(EditAnywhere,Category="Crosshair")
+	UTexture2D* CrosshairCenter;
+
+	UPROPERTY(EditAnywhere,Category="Crosshair")
+	UTexture2D* CrosshairLeft;
+
+	UPROPERTY(EditAnywhere,Category="Crosshair")
+	UTexture2D* CrosshairRight;
+
+	UPROPERTY(EditAnywhere,Category="Crosshair")
+	UTexture2D* CrosshairTop;
+
+	UPROPERTY(EditAnywhere,Category="Crosshair")
+	UTexture2D* CrosshairBottom;
+	
 protected:
 	
 	virtual void BeginPlay() override;
@@ -71,5 +92,11 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AAmmoEject> AmmoClass;
+
+
+
+	
+	
+	
 	
 };
