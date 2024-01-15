@@ -60,6 +60,21 @@ void UShooterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		Character->GetMesh()->TransformToBoneSpace(FName("hand_r"), LeftHandTransform.GetLocation(), FRotator::ZeroRotator, OutPosition, OutRotation);
 		LeftHandTransform.SetLocation(OutPosition);
 		LeftHandTransform.SetRotation(FQuat(OutRotation));
+		if(Character->IsLocallyControlled())
+		{
+			bLocallyControlled = true;
+			FTransform RightHandTransform =  EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("hand_r"),RTS_World);
+			
+			FRotator LookAt = UKismetMathLibrary::FindLookAtRotation(RightHandTransform.GetLocation(),
+			RightHandTransform.GetLocation() + (RightHandTransform.GetLocation() -  Character->GetHitTarget()));
+            RightHandRotation = FMath::RInterpTo(RightHandRotation,LookAt,DeltaSeconds,30.f);
+			//DebugLines
+			FTransform MuzzleTipTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("MuzzleFlash"),RTS_World);
+			FVector MuzzleX(FRotationMatrix(MuzzleTipTransform.GetRotation().Rotator()).GetUnitAxis(EAxis::X));
+			DrawDebugLine(GetWorld(),MuzzleTipTransform.GetLocation(),MuzzleTipTransform.GetLocation() + MuzzleX * 1000.f,FColor::Green);
+			DrawDebugLine(GetWorld(),MuzzleTipTransform.GetLocation(),Character->GetHitTarget(),FColor::Blue);
+		}
+		
+		
 	}
-	
 }

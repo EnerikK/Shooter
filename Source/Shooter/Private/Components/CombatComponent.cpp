@@ -9,8 +9,10 @@
 #include "Net/UnrealNetwork.h"
 #include "Weapon/Weapon.h"
 #include "DrawDebugHelpers.h"
+#include "Camera/CameraComponent.h"
 #include "Hud/ShooterHUD.h"
 #include "Player/ShooterPlayerController.h"
+#include "TimerManager.h"
 
 UCombatComponent::UCombatComponent()
 {
@@ -26,6 +28,11 @@ void UCombatComponent::BeginPlay()
 	if(Character)
 	{
 		Character->GetCharacterMovement()->MaxWalkSpeed=BaseWalkSpeed;
+		if(Character->GetFollowCamera())
+		{
+			DefaultPov = Character->GetFollowCamera()->FieldOfView;
+			CurrentPov = DefaultPov;
+		}
 	}
 }
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -39,10 +46,136 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 {
  	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	
-	SetHudCrosshair(DeltaTime);
-	
+	if(Character && Character->IsLocallyControlled())
+	{
+		FHitResult HitResult;
+		TraceUnderCrosshair(HitResult);
+		HitTarget = HitResult.ImpactPoint;
+		
+		SetHudCrosshair(DeltaTime);
+		InterpPov(DeltaTime);
+	}
 	/*FHitResult HitResult;
 	TraceUnderCrosshair(HitResult);*/
+}
+void UCombatComponent::FireButtonPressed(bool bPressed)
+{
+	bFireButtonPressed = bPressed;
+	if(bFireButtonPressed)
+	{
+		Fire();
+	}
+	else
+	{
+		bCanFire = false;
+	}
+}
+void UCombatComponent::Fire()
+{
+	if(bCanFire)
+	{
+		bCanFire = false;
+		ServerFire(HitTarget);
+		if(EquippedWeapon)
+		{
+			CrosshairShooting = 0.75f;
+		}
+		StartFiretimer();
+	}
+}
+void UCombatComponent::StartFiretimer()
+{
+	if(EquippedWeapon == nullptr || Character == nullptr) return;
+	Character->GetWorldTimerManager().SetTimer(Firetimer,this,&UCombatComponent::FireTimerFinished,EquippedWeapon->FireDelay);
+}
+void UCombatComponent::FireTimerFinished()
+{
+	if(EquippedWeapon == nullptr ) return;
+	bCanFire = true;
+	if(bFireButtonPressed && EquippedWeapon->bIsAutomatic)
+	{
+		Fire();
+	}
+}
+void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
+{
+	if(EquippedWeapon == nullptr) return;
+	if(Character)
+	{
+		Character->PlayFireMontage(bAiming);
+		EquippedWeapon->Fire(TraceHitTarget);
+	}
+}
+void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
+{
+	MulticastFire(TraceHitTarget);
+}
+void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
+{
+	if(Character == nullptr || WeaponToEquip == nullptr) return;
+
+	EquippedWeapon = WeaponToEquip;
+	EquippedWeapon->SetWeaponState(EWeaponState::EW_Equipped);
+	const USkeletalMeshSocket* HandSocket = Character->GetMesh()->GetSocketByName(FName("Hand_R_Socket"));
+	if(HandSocket)
+	{
+		HandSocket->AttachActor(EquippedWeapon,Character->GetMesh());
+	}
+	EquippedWeapon->SetOwner(Character);
+	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
+	Character->bUseControllerRotationYaw = true;
+	
+}
+void UCombatComponent::OnRep_EquippedWeapon()
+{
+	if(EquippedWeapon && Character)
+	{
+		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
+		Character->bUseControllerRotationYaw = true;
+	}
+}
+void UCombatComponent::TraceUnderCrosshair(FHitResult& TraceHitResult)
+{
+	FVector2D ViewportSize;
+	if(GEngine && GEngine->GameViewport)
+	{
+		GEngine->GameViewport->GetViewportSize(ViewportSize);
+	}
+	FVector2D CrosshairLocation(ViewportSize.X/2.f,ViewportSize.Y/2.f);//Center of the viewport
+	FVector CrossHairWorldPosition;
+	FVector CrossHairWorldDirection;
+	bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld(
+		UGameplayStatics::GetPlayerController(this,0),
+		CrosshairLocation,CrossHairWorldPosition,CrossHairWorldDirection
+		);
+	if(bScreenToWorld)
+	{
+		FVector Start = CrossHairWorldPosition;
+
+		if(Character)
+		{
+			float DistanceToCharacter = (Character->GetActorLocation() - Start).Size();
+			Start += CrossHairWorldDirection * (DistanceToCharacter + 100.f);
+			DrawDebugSphere(GetWorld(),Start,16.f,12,FColor::Red,false);
+		}
+		
+		FVector End = Start + CrossHairWorldDirection * TRACE;
+		GetWorld()->LineTraceSingleByChannel(
+			TraceHitResult,
+			Start,
+			End,
+			ECC_Visibility
+		);
+		if (!TraceHitResult.bBlockingHit) { TraceHitResult.ImpactPoint = End; }
+		if(TraceHitResult.GetActor() && TraceHitResult.GetActor()->Implements<UInteractInterface>())
+		{
+			HUDPackage.CrosshairColor = FLinearColor::Red;
+		}
+		else
+		{
+			HUDPackage.CrosshairColor = FLinearColor::White;
+		}
+	}
 }
 void UCombatComponent::SetHudCrosshair(float DeltaTime)
 {
@@ -56,7 +189,6 @@ void UCombatComponent::SetHudCrosshair(float DeltaTime)
 		Hud = Hud == nullptr ? Cast<AShooterHUD>(Controller->GetHUD()) : Hud; //same
 		if(Hud)
 		{
-			FHUDPackage HUDPackage;
 			if(EquippedWeapon)
 			{
 				HUDPackage.CrosshairCenter = EquippedWeapon->CrosshairCenter;
@@ -89,12 +221,38 @@ void UCombatComponent::SetHudCrosshair(float DeltaTime)
 			{
 				CrosshairInAir = FMath::FInterpTo(CrosshairInAir,0.f,DeltaTime,30.f);
 			}
+			if(bAiming)
+			{
+				CrosshairAim = FMath::FInterpTo(CrosshairAim,0.58f,DeltaTime,30.f);
+			}
+			else
+			{
+				CrosshairAim = FMath::FInterpTo(CrosshairAim,0.f,DeltaTime,30.f);
+				
+			}
+
+			CrosshairShooting = FMath::FInterpTo(CrosshairShooting,0.f,DeltaTime,40.f);
 			
-			HUDPackage.CrosshairSpread = CrosshairVelocity + CrosshairInAir;
+			HUDPackage.CrosshairSpread = 0.5f + CrosshairVelocity + CrosshairInAir - CrosshairAim + CrosshairShooting;
 			Hud->SetHudPackage(HUDPackage);
 		}
 	}
-	
+}
+void UCombatComponent::InterpPov(float DeltaTime)
+{
+	if(EquippedWeapon == nullptr) return;
+	if(bAiming)
+	{
+		CurrentPov = FMath::FInterpTo(CurrentPov,EquippedWeapon->GetZoomedPov(),DeltaTime,EquippedWeapon->GetZoomInterpPov());
+	}
+	else
+	{
+		CurrentPov = FMath::FInterpTo(CurrentPov,DefaultPov,DeltaTime,ZoomInterpSpeed);
+	}
+	if(Character && Character->GetFollowCamera())
+	{
+		Character->GetFollowCamera()->SetFieldOfView(CurrentPov);
+	}
 }
 void UCombatComponent::SetAiming(bool bIsAiming)
 {
@@ -113,81 +271,3 @@ void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
 		Character->GetCharacterMovement()->MaxWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed;
 	}
 }
-void UCombatComponent::OnRep_EquippedWeapon()
-{
-	if(EquippedWeapon && Character)
-	{
-		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
-		Character->bUseControllerRotationYaw = true;
-	}
-}
-void UCombatComponent::FireButtonPressed(bool bPressed)
-{
-	bFireButtonPressed = bPressed;
-	if(bFireButtonPressed)
-	{
-		FHitResult HitResult;
-		TraceUnderCrosshair(HitResult);
-		ServerFire(HitResult.ImpactPoint);
-	}
-	
-}
-
-void UCombatComponent::TraceUnderCrosshair(FHitResult& TraceHitResult)
-{
-	FVector2D ViewportSize;
-	if(GEngine && GEngine->GameViewport)
-	{
-		GEngine->GameViewport->GetViewportSize(ViewportSize);
-	}
-	FVector2D CrosshairLocation(ViewportSize.X/2.f,ViewportSize.Y/2.f);//Center of the viewport
-	FVector CrossHairWorldPosition;
-	FVector CrossHairWorldDirection;
-	bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld(
-		UGameplayStatics::GetPlayerController(this,0),
-		CrosshairLocation,CrossHairWorldPosition,CrossHairWorldDirection
-		);
-	if(bScreenToWorld)
-	{
-		FVector Start = CrossHairWorldPosition;
-		FVector End = Start + CrossHairWorldDirection * TRACE;
-		GetWorld()->LineTraceSingleByChannel(
-			TraceHitResult,
-			Start,
-			End,
-			ECC_Visibility
-		);
-		if (!TraceHitResult.bBlockingHit) { TraceHitResult.ImpactPoint = End; }
-	}
-}
-void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
-{
-	if(EquippedWeapon == nullptr) return;
-	if(Character)
-	{
-		Character->PlayFireMontage(bAiming);
-		EquippedWeapon->Fire(TraceHitTarget);
-	}
-}
-
-void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
-{
-	MulticastFire(TraceHitTarget);
-}
-void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
-{
-	if(Character == nullptr || WeaponToEquip == nullptr) return;
-
-	EquippedWeapon = WeaponToEquip;
-	EquippedWeapon->SetWeaponState(EWeaponState::EW_Equipped);
-	const USkeletalMeshSocket* HandSocket = Character->GetMesh()->GetSocketByName(FName("Hand_R_Socket"));
-	if(HandSocket)
-	{
-		HandSocket->AttachActor(EquippedWeapon,Character->GetMesh());
-	}
-	EquippedWeapon->SetOwner(Character);
-	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
-	Character->bUseControllerRotationYaw = true;
-	
-}
-

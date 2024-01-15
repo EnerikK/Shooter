@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Hud/ShooterHUD.h"
 #include "CombatComponent.generated.h"
 
 #define TRACE 80000.f
@@ -38,6 +39,7 @@ protected:
 
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
+	void Fire();
 
 	void FireButtonPressed(bool bPressed);
 
@@ -75,12 +77,40 @@ private:
 
 	FVector HitTarget;
 
+	FHUDPackage HUDPackage;
+
 	/*
 	 * Crosshair
 	 */
 
 	float CrosshairVelocity;
 	float CrosshairInAir;
+	float CrosshairAim;
+	float CrosshairShooting;
+
+	/*
+	 * Aiming Pov 
+	 */
+	float DefaultPov;
+
+	UPROPERTY(EditAnywhere,Category="Combat")
+	float ZoomedPov = 30.f;
+
+	float CurrentPov; 
 	
+	UPROPERTY(EditAnywhere,Category="Combat")
+	float ZoomInterpSpeed = 20.f;
+
+	void InterpPov(float DeltaTime);
+
+	/*
+	 * AutoFire rifle basically hold fire 
+	 */
+	FTimerHandle Firetimer;
+	
+	bool bCanFire = true;
+
+	void StartFiretimer();
+	void FireTimerFinished();
 	
 };

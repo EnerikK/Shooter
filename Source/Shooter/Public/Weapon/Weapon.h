@@ -39,6 +39,17 @@ public:
 	FORCEINLINE void SetWeaponState(EWeaponState State);
 	FORCEINLINE USphereComponent* GetPickUpSphere() const {return PickUpSphere;}
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh()const {return WeaponMesh;}
+	FORCEINLINE float GetZoomedPov() const {return ZoomPOV;}
+	FORCEINLINE float GetZoomInterpPov() const {return ZoomInterpSpeed;}
+
+	/*
+	 * AutoFire rifle basically hold fire 
+	 */
+	UPROPERTY(EditAnywhere,Category="Combat")
+	float FireDelay = .15f;
+
+	UPROPERTY(EditAnywhere,Category="Combat")
+	bool bIsAutomatic = true;
 
 	/*
 	* Texture for the cross-hairs
@@ -93,10 +104,13 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AAmmoEject> AmmoClass;
 
+	/*
+	 * Zoom Pov WhileAiming
+	 */
+	UPROPERTY(EditAnywhere)
+	float ZoomPOV = 30.f;
 
-
-	
-	
-	
-	
+	UPROPERTY(EditAnywhere)
+	float ZoomInterpSpeed = 20.f;
+		
 };

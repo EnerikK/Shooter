@@ -2,11 +2,14 @@
 
 
 #include "Weapon/Projectile.h"
+
+#include "Character/ShooterCharacter.h"
 #include "Components/BoxComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Particles/particlesystem.h"
+#include "Shooter/Shooter.h"
 #include "Sound/SoundCue.h"
 
 AProjectile::AProjectile()
@@ -21,7 +24,8 @@ AProjectile::AProjectile()
 	CollisionBox->SetCollisionResponseToAllChannels(ECR_Ignore);
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility,ECR_Block);
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic,ECR_Block);
-
+	CollisionBox->SetCollisionResponseToChannel(ECC_Mesh,ECR_Block);
+	
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>("ProjectileMovementComponent");
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
 	
@@ -69,7 +73,11 @@ void AProjectile::Destroyed()
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
                         FVector NormalImpulse, const FHitResult& Hit)
 {
-	
+	AShooterCharacter* Character = Cast<AShooterCharacter>(OtherActor);
+	if(Character)
+	{
+		Character->MulticastHit();
+	}
 	Destroy();
 }
 

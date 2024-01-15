@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Interface/InteractInterface.h"
 #include "Shooter/Types/TurnInPlace.h"
 #include "ShooterCharacter.generated.h"
 
@@ -13,7 +14,7 @@ class UCameraComponent;
 class USpringArmComponent;
 
 UCLASS()
-class SHOOTER_API AShooterCharacter : public ACharacter
+class SHOOTER_API AShooterCharacter : public ACharacter,public IInteractInterface
 {
 	GENERATED_BODY()
 
@@ -25,6 +26,9 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
 	void PlayFireMontage(bool bAiming);
+	void PlayHitReactMontage();
+	UFUNCTION(NetMulticast,Unreliable)
+	void MulticastHit();
 	
 	void EquipButtonPressed();
 	void CrouchButtonPressed();
@@ -41,6 +45,9 @@ public:
 	AWeapon* GetEquippedWeapon();
 
 	FORCEINLINE ETurnInPlace GetTurningInPlace() const {return TurningInPlace;}
+	FVector GetHitTarget() const;
+
+	FORCEINLINE UCameraComponent* GetFollowCamera() const {return FollowCamera;}
 
 protected:
 	
@@ -77,6 +84,16 @@ private:
 
 	UPROPERTY(EditAnywhere , Category= "Combat")
 	UAnimMontage* FireWeaponMontage;
+
+	UPROPERTY(EditAnywhere , Category= "Combat")
+	UAnimMontage* HitReactMontage;
+
+
+
+	void HideCamera();
+	
+	UPROPERTY(EditAnywhere)
+	float CameraThreshold = 200.f;
 	
 
 };

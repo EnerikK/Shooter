@@ -8,6 +8,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
+#include "Shooter/Shooter.h"
 #include "Weapon/Weapon.h"
 
 
@@ -34,7 +35,10 @@ AShooterCharacter::AShooterCharacter()
 
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera,ECR_Ignore);
+	GetMesh()->SetCollisionObjectType(ECC_Mesh);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera,ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility,ECR_Block);
+
 
 	TurningInPlace = ETurnInPlace::ETurnIP_NotTurning;
 	
@@ -53,6 +57,13 @@ AWeapon* AShooterCharacter::GetEquippedWeapon()
 	return Combat->EquippedWeapon;
 }
 
+FVector AShooterCharacter::GetHitTarget() const
+{
+	if(Combat == nullptr) return FVector();
+	return Combat->HitTarget;
+
+}
+
 void AShooterCharacter::BeginPlay()
 {
  	Super::BeginPlay();
@@ -62,6 +73,7 @@ void AShooterCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	AimOffset(DeltaTime);
+	HideCamera();
 	
 }
 void AShooterCharacter::AimOffset(float DeltaTime)
@@ -123,6 +135,19 @@ void AShooterCharacter::PlayFireMontage(bool bAiming)
 		AnimInstance->Montage_Play(FireWeaponMontage);
 		FName SectionName;
 		SectionName = bAiming ? FName("RifleAim") : FName("RifleHip");
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
+void AShooterCharacter::PlayHitReactMontage()
+{
+	if(Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+	
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if(AnimInstance && HitReactMontage)
+	{
+		AnimInstance->Montage_Play(HitReactMontage);
+		FName SectionName("FrontHit");
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
@@ -253,6 +278,32 @@ void AShooterCharacter::TurnInPlace(float DeltaTime)
 			
 		}
 	}
+}
+void AShooterCharacter::MulticastHit_Implementation()
+{
+	PlayHitReactMontage();
+}
+
+void AShooterCharacter::HideCamera()
+{
+	if(!IsLocallyControlled())return;
+	if((FollowCamera->GetComponentLocation() - GetActorLocation()).Size() < CameraThreshold)
+	{
+		GetMesh()->SetVisibility(false);
+		if(Combat && Combat->EquippedWeapon && Combat->EquippedWeapon->GetWeaponMesh())
+		{
+			Combat->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = true;
+		}
+	}
+	else
+	{
+		GetMesh()->SetVisibility(true);
+		if(Combat && Combat->EquippedWeapon && Combat->EquippedWeapon->GetWeaponMesh())
+		{
+			Combat->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false;
+		}
+	}
+	
 }
 
 void AShooterCharacter::ServerEquipButtonPressed_Implementation()
