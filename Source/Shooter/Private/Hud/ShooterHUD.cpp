@@ -2,7 +2,26 @@
 
 
 #include "Hud/ShooterHUD.h"
+#include "Blueprint/UserWidget.h"
+#include "GameFramework/PlayerController.h"
+#include "Hud/HudOverlay.h"
 
+void AShooterHUD::BeginPlay()
+{
+	Super::BeginPlay();
+	AddHudOverlay();
+}
+
+void AShooterHUD::AddHudOverlay()
+{
+	APlayerController* PlayerController = GetOwningPlayerController();
+	if(PlayerController && HudOverlayClass)
+	{
+		HudOverlay = CreateWidget<UHudOverlay>(PlayerController,HudOverlayClass);
+		HudOverlay->AddToViewport();
+		
+	}
+}
 void AShooterHUD::DrawHUD()
 {
 	Super::DrawHUD();
@@ -42,7 +61,6 @@ void AShooterHUD::DrawHUD()
 		}
 	}
 }
-
 void AShooterHUD::DrawCrosshair(UTexture2D* Texture, FVector2d ViewportCenter,FVector2d Spread,FLinearColor CrosshairColor)
 {
 	const float TextureWidth = Texture->GetSizeX();

@@ -6,6 +6,7 @@
 #include "GameFramework/HUD.h"
 #include "ShooterHUD.generated.h"
 
+class UHudOverlay;
 class UTexture2D;
 
 USTRUCT(BlueprintType)
@@ -38,6 +39,16 @@ public:
 	virtual void DrawHUD() override;
 	
 	FORCEINLINE void SetHudPackage(const FHUDPackage& Package) {HudPackage = Package;}
+
+	UPROPERTY(EditAnywhere,Category="Player Stats")
+	TSubclassOf<UUserWidget> HudOverlayClass;
+	
+	UHudOverlay* HudOverlay;
+
+protected:
+
+	virtual void BeginPlay() override;
+	void AddHudOverlay();
 
 private:
 	

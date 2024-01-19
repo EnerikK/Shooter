@@ -48,6 +48,7 @@ void AShooterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
 	DOREPLIFETIME_CONDITION(AShooterCharacter,OverlappingWeapon,COND_OwnerOnly);
+	DOREPLIFETIME(AShooterCharacter,Health);
 	
 }
 
@@ -305,7 +306,10 @@ void AShooterCharacter::HideCamera()
 	}
 	
 }
-
+void AShooterCharacter::OnRep_Health()
+{
+	
+}
 void AShooterCharacter::ServerEquipButtonPressed_Implementation()
 {
 	if(Combat && HasAuthority())
@@ -313,7 +317,6 @@ void AShooterCharacter::ServerEquipButtonPressed_Implementation()
 		Combat->EquipWeapon(OverlappingWeapon);
 	}
 }
-
 void AShooterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);

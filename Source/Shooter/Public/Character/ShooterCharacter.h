@@ -87,13 +87,21 @@ private:
 
 	UPROPERTY(EditAnywhere , Category= "Combat")
 	UAnimMontage* HitReactMontage;
-
-
-
+	
 	void HideCamera();
 	
 	UPROPERTY(EditAnywhere)
 	float CameraThreshold = 200.f;
 	
+	/*
+	 * PlayerHealth
+	 */
+	UPROPERTY(EditAnywhere,Category="Player Stats")
+	float MaxHealth = 100;
 
+	UPROPERTY(ReplicatedUsing=OnRep_Health,VisibleAnywhere,Category="Player Stats")
+	float Health = 100;
+
+	UFUNCTION()
+	void OnRep_Health();
 };
