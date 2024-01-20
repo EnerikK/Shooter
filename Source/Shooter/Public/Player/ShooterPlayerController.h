@@ -8,6 +8,7 @@
 #include "ShooterPlayerController.generated.h"
 
 
+class AShooterHUD;
 class AWeapon;
 class AShooterCharacter;
 class UCombatComponent;
@@ -27,6 +28,7 @@ public:
 	AShooterPlayerController();
 	virtual void Tick(float DeltaSeconds) override;
 
+	void SetHudHealth(float Health , float MaxHealth);
 
 protected:
 
@@ -34,6 +36,8 @@ protected:
 	virtual void SetupInputComponent() override;
 
 private:
+
+	AShooterHUD* ShooterHUD;
 
 	UPROPERTY(VisibleAnywhere)
 	UCombatComponent* Combat;

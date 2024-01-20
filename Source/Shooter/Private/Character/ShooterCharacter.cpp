@@ -4,10 +4,12 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/CombatComponent.h"
+#include "Game/ShooterGameModeBase.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
+#include "Player/ShooterPlayerController.h"
 #include "Shooter/Shooter.h"
 #include "Weapon/Weapon.h"
 
@@ -39,8 +41,9 @@ AShooterCharacter::AShooterCharacter()
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera,ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility,ECR_Block);
 
-
 	TurningInPlace = ETurnInPlace::ETurnIP_NotTurning;
+
+	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimeLineComponent"));
 	
 }
 void AShooterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -52,6 +55,83 @@ void AShooterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	
 }
 
+void AShooterCharacter::UpdateHudHealth()
+{
+	ShooterPlayerController = ShooterPlayerController == nullptr ?  Cast<AShooterPlayerController>(Controller) : ShooterPlayerController;
+	if(ShooterPlayerController)
+	{
+		ShooterPlayerController->SetHudHealth(Health,MaxHealth);
+	}
+}
+void AShooterCharacter::Elim()
+{
+	if(Combat && Combat->EquippedWeapon)
+	{
+		Combat->EquippedWeapon->Dropped();
+	}
+	MulticastElim();
+	GetWorldTimerManager().SetTimer(ElimTimer,this,&AShooterCharacter::ElimTimerFinished,ElimDelay);
+}
+void AShooterCharacter::MulticastElim_Implementation()
+{
+	bIsElimmed = true;
+	PlayElimMontage();
+	//StartDissolve Effect
+	if(DissolveMaterialInstance)
+	{
+		DynamicDissolveMaterialInstance = UMaterialInstanceDynamic::Create(DissolveMaterialInstance,this);
+		GetMesh()->SetMaterial(0,DynamicDissolveMaterialInstance);
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"),-0.55f);
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Glow"),100.f);
+	}
+	StartDissolve();
+
+	//DisableCharacterMovement
+	GetCharacterMovement()->DisableMovement();
+	GetCharacterMovement()->StopMovementImmediately();
+	if(ShooterPlayerController)
+	{
+		DisableInput(ShooterPlayerController);
+	}
+	//Disable Collision
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
+}
+void AShooterCharacter::UpdateDissolveMaterial(float DissolveValue)
+{
+	if(DynamicDissolveMaterialInstance)
+	{
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"),DissolveValue);
+	}
+}
+void AShooterCharacter::StartDissolve()
+{
+	DissolveTrack.BindDynamic(this,&AShooterCharacter::UpdateDissolveMaterial);
+	if(DissolveCurve && DissolveTimeline)
+	{
+		DissolveTimeline->AddInterpFloat(DissolveCurve,DissolveTrack);
+		DissolveTimeline->Play();
+	}
+}
+void AShooterCharacter::ElimTimerFinished()
+{
+	AShooterGameModeBase* ShooterGameMode = GetWorld()->GetAuthGameMode<AShooterGameModeBase>();
+	if(ShooterGameMode)
+	{
+		ShooterGameMode->RequestRespawn(this,Controller);
+	}
+
+}
+void AShooterCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	UpdateHudHealth();
+	if(HasAuthority())
+	{
+		OnTakeAnyDamage.AddDynamic(this,&AShooterCharacter::ReceiveDamage);
+	}
+}
 AWeapon* AShooterCharacter::GetEquippedWeapon()
 {
 	if(Combat == nullptr) return nullptr;
@@ -63,11 +143,6 @@ FVector AShooterCharacter::GetHitTarget() const
 	if(Combat == nullptr) return FVector();
 	return Combat->HitTarget;
 
-}
-
-void AShooterCharacter::BeginPlay()
-{
- 	Super::BeginPlay();
 }
 void AShooterCharacter::Tick(float DeltaTime)
 {
@@ -113,6 +188,24 @@ void AShooterCharacter::AimOffset(float DeltaTime)
 		FVector2D OutRange(-90.f, 0.f);
 		//Apply Correction
 		AO_Pitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, AO_Pitch);
+	}	
+}
+void AShooterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
+	AController* InstigatorController, AActor* DamageCauser)
+{
+	Health = FMath::Clamp(Health - Damage,0.f,MaxHealth);
+	UpdateHudHealth();
+	PlayHitReactMontage();
+
+	if(Health  == 0.f)
+	{
+		AShooterGameModeBase* ShooterGameMode = GetWorld()->GetAuthGameMode<AShooterGameModeBase>();
+		if(ShooterGameMode)
+		{
+			ShooterPlayerController = ShooterPlayerController == nullptr ? Cast<AShooterPlayerController>(Controller) : ShooterPlayerController;
+			AShooterPlayerController* AttackerController = Cast<AShooterPlayerController>(InstigatorController);
+        	ShooterGameMode->PlayerElimination(this,ShooterPlayerController,AttackerController);	
+		}
 	}
 	
 }
@@ -125,7 +218,6 @@ void AShooterCharacter::PostInitializeComponents()
 	}
 	
 }
-
 void AShooterCharacter::PlayFireMontage(bool bAiming)
 {
 	if(Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
@@ -139,7 +231,16 @@ void AShooterCharacter::PlayFireMontage(bool bAiming)
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
-
+void AShooterCharacter::PlayElimMontage()
+{
+	if(Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+	
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if(AnimInstance && ElimMontage)
+	{
+		AnimInstance->Montage_Play(ElimMontage);
+	}
+}
 void AShooterCharacter::PlayHitReactMontage()
 {
 	if(Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
@@ -152,7 +253,6 @@ void AShooterCharacter::PlayHitReactMontage()
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
-
 void AShooterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
 	if(OverlappingWeapon)
@@ -168,17 +268,14 @@ void AShooterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 		}
 	}
 }
-
 bool AShooterCharacter::IsWeaponEquipped()
 {
 	return (Combat && Combat->EquippedWeapon);
 }
-
 bool AShooterCharacter::IsAiming()
 {
 	return (Combat && Combat->bAiming);
 }
-
 void AShooterCharacter::EquipButtonPressed()
 {
 	if(Combat)
@@ -194,7 +291,6 @@ void AShooterCharacter::EquipButtonPressed()
 		
 	}
 }
-
 void AShooterCharacter::CrouchButtonPressed()
 {
 	if(bIsCrouched)
@@ -215,7 +311,6 @@ void AShooterCharacter::AimButtonPressed()
 		
 	}
 }
-
 void AShooterCharacter::AimButtonReleased()
 {
 	if(Combat)
@@ -224,7 +319,6 @@ void AShooterCharacter::AimButtonReleased()
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Released!"));	
 	}
 }
-
 void AShooterCharacter::FireButtonPressed()
 {
 	if(Combat)
@@ -235,7 +329,6 @@ void AShooterCharacter::FireButtonPressed()
 	}
 	
 }
-
 void AShooterCharacter::FireButtonReleased()
 {
 	if(Combat)
@@ -245,7 +338,6 @@ void AShooterCharacter::FireButtonReleased()
 
 	}
 }
-
 void AShooterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 {
 	if(OverlappingWeapon)
@@ -257,7 +349,6 @@ void AShooterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 		LastWeapon->ShowPickUpWidget(false);
 	}
 }
-
 void AShooterCharacter::TurnInPlace(float DeltaTime)
 {
 	if(AO_Yaw > 90.f)
@@ -280,11 +371,6 @@ void AShooterCharacter::TurnInPlace(float DeltaTime)
 		}
 	}
 }
-void AShooterCharacter::MulticastHit_Implementation()
-{
-	PlayHitReactMontage();
-}
-
 void AShooterCharacter::HideCamera()
 {
 	if(!IsLocallyControlled())return;
@@ -304,11 +390,11 @@ void AShooterCharacter::HideCamera()
 			Combat->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false;
 		}
 	}
-	
 }
 void AShooterCharacter::OnRep_Health()
 {
-	
+	PlayHitReactMontage();
+	UpdateHudHealth();
 }
 void AShooterCharacter::ServerEquipButtonPressed_Implementation()
 {

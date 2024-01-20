@@ -5,22 +5,22 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Character/ShooterCharacter.h"
+#include "Components/ProgressBar.h"
+#include "Components/TextBlock.h"
 #include "GameFramework/Character.h"
-
-
+#include "Hud/HudOverlay.h"
+#include "Hud/ShooterHUD.h"
 
 
 AShooterPlayerController::AShooterPlayerController()
 {
 	bReplicates = true;
 }
-void AShooterPlayerController::Tick(float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);
-}
 void AShooterPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+
+	ShooterHUD = Cast<AShooterHUD>(GetHUD());
 
 	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
 	if(Subsystem)
@@ -28,7 +28,23 @@ void AShooterPlayerController::BeginPlay()
 		Subsystem->AddMappingContext(PlayerContext,0);
 	}
 }
-
+void AShooterPlayerController::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+}
+void AShooterPlayerController::SetHudHealth(float Health, float MaxHealth)
+{
+	ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
+	bool bHudValid = ShooterHUD && ShooterHUD->HudOverlay && ShooterHUD->HudOverlay->HealthBar && ShooterHUD->HudOverlay->HealthText;
+	if(bHudValid)
+	{
+		const float HealthPercent = Health/MaxHealth;
+		ShooterHUD->HudOverlay->HealthBar->SetPercent(HealthPercent);
+		FString HealthText = FString::Printf(TEXT("%d/%d"),FMath::CeilToInt(Health),FMath::CeilToInt(MaxHealth));
+		ShooterHUD->HudOverlay->HealthText->SetText(FText::FromString(HealthText));
+	}
+	
+}
 void AShooterPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
