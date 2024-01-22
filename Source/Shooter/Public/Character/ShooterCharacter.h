@@ -9,6 +9,7 @@
 #include "Shooter/Types/TurnInPlace.h"
 #include "ShooterCharacter.generated.h"
 
+class AShooterPlayerState;
 class AShooterPlayerController;
 class UCombatComponent;
 class AWeapon;
@@ -54,6 +55,9 @@ public:
 	FVector GetHitTarget() const;
 	FORCEINLINE UCameraComponent* GetFollowCamera() const {return FollowCamera;}
 	FORCEINLINE bool IsElimmed() const {return bIsElimmed;}
+	FORCEINLINE float GetHealth() const {return Health;}
+	FORCEINLINE float GetMaxHealth() const {return MaxHealth;}
+
 
 protected:
 	
@@ -62,8 +66,16 @@ protected:
 
 	UFUNCTION()
 	void ReceiveDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,AController* InstigatorController,AActor* DamageCauser);
+	//Poll for any relevant classes and initialiaze the class
+	void PollInit();
 
 private:
+
+	UPROPERTY()
+	AShooterPlayerState* ShooterPlayerState;
+
+	UPROPERTY()
+	AShooterPlayerController* ShooterPlayerController;
 
 	UPROPERTY(VisibleAnywhere,Category="Camera")
 	USpringArmComponent* CameraBoom;
@@ -118,10 +130,8 @@ private:
 
 	UFUNCTION()
 	void OnRep_Health();
-
-	AShooterPlayerController* ShooterPlayerController;
 	
-	//Dissolve Effect  TODO ::  there's a bug that only dissolve on of the 2 materials that the Character Has Fix it at some point 
+	//Dissolve Effect  TODO ::  there's a bug(Feature) that only dissolve on of the 2 materials that the Character Has Fix it at some point 
 
 	UPROPERTY(VisibleAnywhere)
 	UTimelineComponent* DissolveTimeline;

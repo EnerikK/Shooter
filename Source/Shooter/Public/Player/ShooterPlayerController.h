@@ -27,8 +27,11 @@ public:
 
 	AShooterPlayerController();
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void OnPossess(APawn* InPawn) override;
 
 	void SetHudHealth(float Health , float MaxHealth);
+	void SetHudScore(float Score);
+	void SetHudDefeats(int32 Defeats);
 
 protected:
 

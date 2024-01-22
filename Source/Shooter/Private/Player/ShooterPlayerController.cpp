@@ -32,6 +32,16 @@ void AShooterPlayerController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 }
+void AShooterPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+	AShooterCharacter* ShooterCharacter = Cast<AShooterCharacter>(InPawn);
+	if(ShooterCharacter)
+	{
+		SetHudHealth(ShooterCharacter->GetHealth(),ShooterCharacter->GetMaxHealth());
+	}
+	
+}
 void AShooterPlayerController::SetHudHealth(float Health, float MaxHealth)
 {
 	ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
@@ -43,6 +53,29 @@ void AShooterPlayerController::SetHudHealth(float Health, float MaxHealth)
 		FString HealthText = FString::Printf(TEXT("%d/%d"),FMath::CeilToInt(Health),FMath::CeilToInt(MaxHealth));
 		ShooterHUD->HudOverlay->HealthText->SetText(FText::FromString(HealthText));
 	}
+	
+}
+void AShooterPlayerController::SetHudScore(float Score)
+{
+	ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
+	bool bHudValid = ShooterHUD && ShooterHUD->HudOverlay && ShooterHUD->HudOverlay->ScoreAmount;
+	if(bHudValid)
+	{
+		FString ScoreText = FString::Printf(TEXT("%d"),FMath::FloorToInt(Score));
+		ShooterHUD->HudOverlay->ScoreAmount->SetText(FText::FromString(ScoreText));
+	}
+}
+void AShooterPlayerController::SetHudDefeats(int32 Defeats)
+{
+	ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
+	bool bHudValid = ShooterHUD && ShooterHUD->HudOverlay && ShooterHUD->HudOverlay->DefeatsAmount;
+	if(bHudValid)
+	{
+		FString DefeatsText = FString::Printf(TEXT("%d"),Defeats);
+		ShooterHUD->HudOverlay->DefeatsAmount->SetText(FText::FromString(DefeatsText));
+		
+	}
+
 	
 }
 void AShooterPlayerController::SetupInputComponent()

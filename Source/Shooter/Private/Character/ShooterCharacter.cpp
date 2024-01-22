@@ -10,6 +10,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/ShooterPlayerController.h"
+#include "PlayerState/ShooterPlayerState.h"
 #include "Shooter/Shooter.h"
 #include "Weapon/Weapon.h"
 
@@ -54,7 +55,15 @@ void AShooterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(AShooterCharacter,Health);
 	
 }
-
+void AShooterCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	UpdateHudHealth();
+	if(HasAuthority())
+	{
+		OnTakeAnyDamage.AddDynamic(this,&AShooterCharacter::ReceiveDamage);
+	}
+}
 void AShooterCharacter::UpdateHudHealth()
 {
 	ShooterPlayerController = ShooterPlayerController == nullptr ?  Cast<AShooterPlayerController>(Controller) : ShooterPlayerController;
@@ -123,15 +132,7 @@ void AShooterCharacter::ElimTimerFinished()
 	}
 
 }
-void AShooterCharacter::BeginPlay()
-{
-	Super::BeginPlay();
-	UpdateHudHealth();
-	if(HasAuthority())
-	{
-		OnTakeAnyDamage.AddDynamic(this,&AShooterCharacter::ReceiveDamage);
-	}
-}
+
 AWeapon* AShooterCharacter::GetEquippedWeapon()
 {
 	if(Combat == nullptr) return nullptr;
@@ -150,6 +151,7 @@ void AShooterCharacter::Tick(float DeltaTime)
 
 	AimOffset(DeltaTime);
 	HideCamera();
+	PollInit();
 	
 }
 void AShooterCharacter::AimOffset(float DeltaTime)
@@ -207,7 +209,18 @@ void AShooterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const 
         	ShooterGameMode->PlayerElimination(this,ShooterPlayerController,AttackerController);	
 		}
 	}
-	
+}
+void AShooterCharacter::PollInit()
+{
+	if(ShooterPlayerState == nullptr)
+	{
+		ShooterPlayerState = GetPlayerState<AShooterPlayerState>();
+		if(ShooterPlayerState)
+		{
+			ShooterPlayerState->AddToScore(0.f);
+			ShooterPlayerState->AddToDefeats(0);
+		}
+	}
 }
 void AShooterCharacter::PostInitializeComponents()
 {
