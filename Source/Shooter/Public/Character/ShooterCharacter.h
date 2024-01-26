@@ -7,6 +7,7 @@
 #include "GameFramework/Character.h"
 #include "Interface/InteractInterface.h"
 #include "Shooter/Types/TurnInPlace.h"
+#include "Shooter/Types/CombatState.h"
 #include "ShooterCharacter.generated.h"
 
 class AShooterPlayerState;
@@ -29,6 +30,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
 	void PlayFireMontage(bool bAiming);
+	void PlayReloadMontage();
 	void PlayElimMontage();
 	void PlayHitReactMontage();
 	void UpdateHudHealth();
@@ -43,6 +45,7 @@ public:
 	void AimButtonReleased();
 	void FireButtonPressed();
 	void FireButtonReleased();
+	void ReloadButtonPressed();
 	
 	void SetOverlappingWeapon(AWeapon* Weapon);
 	bool IsWeaponEquipped();
@@ -57,6 +60,7 @@ public:
 	FORCEINLINE bool IsElimmed() const {return bIsElimmed;}
 	FORCEINLINE float GetHealth() const {return Health;}
 	FORCEINLINE float GetMaxHealth() const {return MaxHealth;}
+	ECombatState GetCombatState() const;
 
 
 protected:
@@ -83,7 +87,7 @@ private:
 	UPROPERTY(VisibleAnywhere,Category="Camera")
 	UCameraComponent* FollowCamera;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = true))
 	UCombatComponent* Combat;
 	
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
@@ -103,6 +107,9 @@ private:
 	ETurnInPlace TurningInPlace;
 	void TurnInPlace(float DeltaTime);
 
+	/*
+	 * Montages
+	 */
 	UPROPERTY(EditAnywhere , Category= "Combat")
 	UAnimMontage* FireWeaponMontage;
 
@@ -111,6 +118,9 @@ private:
 
 	UPROPERTY(EditAnywhere , Category= "Combat")
 	UAnimMontage* ElimMontage;
+
+	UPROPERTY(EditAnywhere , Category= "Combat")
+	UAnimMontage* ReloadMontage;
 	
 	void HideCamera();
 	

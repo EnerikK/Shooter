@@ -75,8 +75,29 @@ void AShooterPlayerController::SetHudDefeats(int32 Defeats)
 		ShooterHUD->HudOverlay->DefeatsAmount->SetText(FText::FromString(DefeatsText));
 		
 	}
-
+}
+void AShooterPlayerController::SetHudWeaponAmmo(int32 Ammo)
+{
+	ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
+	bool bHudValid = ShooterHUD && ShooterHUD->HudOverlay && ShooterHUD->HudOverlay->WeaponAmmoAmount;
+	if(bHudValid)
+	{
+		FString AmmoText = FString::Printf(TEXT("%d"),Ammo);
+		ShooterHUD->HudOverlay->WeaponAmmoAmount->SetText(FText::FromString(AmmoText));
+		
+	}
 	
+}
+void AShooterPlayerController::SetHudCarriedAmmo(int32 Ammo)
+{
+	ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
+	bool bHudValid = ShooterHUD && ShooterHUD->HudOverlay && ShooterHUD->HudOverlay->CarriedAmmo;
+	if(bHudValid)
+	{
+		FString AmmoText = FString::Printf(TEXT("%d"),Ammo);
+		ShooterHUD->HudOverlay->CarriedAmmo->SetText(FText::FromString(AmmoText));
+		
+	}
 }
 void AShooterPlayerController::SetupInputComponent()
 {
@@ -106,6 +127,9 @@ void AShooterPlayerController::SetupInputComponent()
 
 	EnhancedInputComponent->BindAction(
 	FireAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Fire);
+
+	EnhancedInputComponent->BindAction(
+	ReloadAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Reload);
 	
 }
 void AShooterPlayerController::Move(const FInputActionValue& Value)
@@ -191,5 +215,11 @@ void AShooterPlayerController::Fire(const FInputActionValue& Value)
 {
 	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
 	ControlledCharacter->FireButtonPressed();
+}
+
+void AShooterPlayerController::Reload(const FInputActionValue& Value)
+{
+	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
+	ControlledCharacter->ReloadButtonPressed();
 }
 	

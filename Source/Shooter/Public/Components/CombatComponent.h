@@ -5,7 +5,10 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Hud/ShooterHUD.h"
+#include "Weapon/WeaponTypes.h"
+#include "Shooter/Types/CombatState.h"
 #include "CombatComponent.generated.h"
+
 
 #define TRACE 80000.f
 
@@ -28,6 +31,9 @@ public:
 
 
 	void EquipWeapon(AWeapon* WeaponToEquip);
+	void Reload();
+	UFUNCTION(BlueprintCallable)
+	void FinishReloading();
 	
 protected:
 
@@ -52,7 +58,11 @@ protected:
 	void TraceUnderCrosshair(FHitResult& TraceHitResult);
 
 	void SetHudCrosshair(float DeltaTime);
+
+	UFUNCTION(Server,Reliable)
+	void ServerReload();
 	
+	void HandleReload();
 private:
 	
 	AShooterCharacter* Character;
@@ -112,5 +122,26 @@ private:
 
 	void StartFiretimer();
 	void FireTimerFinished();
+
+	bool CanFire();
+
+	//Carried ammo for the weapon equipped
+	UPROPERTY(ReplicatedUsing=OnRep_CarriedAmmo)
+	int32 CarriedAmmo;
+
+	UFUNCTION()
+	void OnRep_CarriedAmmo();
+
+	
+	TMap<EWeaponType,int32> CarriedAmmoMap; //TODO : Understand how tmaps and hash functions work better
+	UPROPERTY()
+	int32 StartingARAmmo = 30;
+	void InitializeCarriedAmmo();
+
+	UPROPERTY(ReplicatedUsing=OnRep_CombatState)
+	ECombatState CombatState = ECombatState::ECState_Unoccupied;
+	
+	UFUNCTION()
+	void OnRep_CombatState();
 	
 };

@@ -5,8 +5,12 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Animation/AnimationAsset.h"
+#include "Weapon//WeaponTypes.h"
 #include "Weapon.generated.h"
 
+
+class AShooterPlayerController;
+class AShooterCharacter;
 class AAmmoEject;
 class UWidgetComponent;
 class USphereComponent;
@@ -34,14 +38,18 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	void ShowPickUpWidget(bool bShowWidget);
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void OnRep_Owner() override;
 	virtual void Fire(const FVector& HitTarget);
 	void Dropped();
+	void SetHudAmmo();
 	
 	FORCEINLINE void SetWeaponState(EWeaponState State);
 	FORCEINLINE USphereComponent* GetPickUpSphere() const {return PickUpSphere;}
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh()const {return WeaponMesh;}
 	FORCEINLINE float GetZoomedPov() const {return ZoomPOV;}
 	FORCEINLINE float GetZoomInterpPov() const {return ZoomInterpSpeed;}
+	FORCEINLINE EWeaponType GetWeaponType() const {return WeaponType;}
+	bool IsEmpty();
 
 	/*
 	 * AutoFire rifle basically hold fire 
@@ -99,11 +107,28 @@ private:
 	UPROPERTY(VisibleAnywhere,Category="Weapon Properties")
 	UWidgetComponent* PickUpWidget;
 
-	UPROPERTY(EditAnywhere , Category = "Weapon Properties")
+	UPROPERTY(EditAnywhere , Category ="Weapon Properties")
 	UAnimationAsset* FireAnimation;
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AAmmoEject> AmmoClass;
+
+	UPROPERTY(EditAnywhere,ReplicatedUsing=OnRep_Ammo)
+	int32 Ammo;
+
+	UPROPERTY(EditAnywhere)
+	int32 MagCapacity;
+
+	UFUNCTION()
+	void OnRep_Ammo();
+
+	void SpendRound(); //shoot bullet
+
+	UPROPERTY()
+	AShooterCharacter* ShooterOwnerCharacter;
+	
+	UPROPERTY()
+	AShooterPlayerController* ShooterOwnerPlayerController;
 
 	/*
 	 * Zoom Pov WhileAiming
@@ -113,5 +138,8 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float ZoomInterpSpeed = 20.f;
+
+	UPROPERTY(EditAnywhere)
+	EWeaponType WeaponType;
 		
 };

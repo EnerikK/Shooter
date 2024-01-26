@@ -13,6 +13,7 @@
 #include "PlayerState/ShooterPlayerState.h"
 #include "Shooter/Shooter.h"
 #include "Weapon/Weapon.h"
+#include "Weapon/WeaponTypes.h"
 
 
 AShooterCharacter::AShooterCharacter()
@@ -83,6 +84,10 @@ void AShooterCharacter::Elim()
 }
 void AShooterCharacter::MulticastElim_Implementation()
 {
+	if(ShooterPlayerController)
+	{
+		ShooterPlayerController->SetHudWeaponAmmo(0);
+	}
 	bIsElimmed = true;
 	PlayElimMontage();
 	//StartDissolve Effect
@@ -244,6 +249,24 @@ void AShooterCharacter::PlayFireMontage(bool bAiming)
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
+void AShooterCharacter::PlayReloadMontage()
+{
+	if(Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if(AnimInstance && ReloadMontage)
+	{
+		AnimInstance->Montage_Play(ReloadMontage);
+		FName SectionName;
+		switch (Combat->EquippedWeapon->GetWeaponType())
+		{
+		case EWeaponType::EWT_AssualtRifle:
+			SectionName = FName("Rifle");
+			break;
+		}
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+	
+}
 void AShooterCharacter::PlayElimMontage()
 {
 	if(Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
@@ -351,6 +374,15 @@ void AShooterCharacter::FireButtonReleased()
 
 	}
 }
+void AShooterCharacter::ReloadButtonPressed()
+{
+	if(Combat)
+	{
+		Combat->Reload();
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Reloading!"));	
+
+	}
+}
 void AShooterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 {
 	if(OverlappingWeapon)
@@ -419,5 +451,10 @@ void AShooterCharacter::ServerEquipButtonPressed_Implementation()
 void AShooterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
+ECombatState AShooterCharacter::GetCombatState() const
+{
+	if(Combat == nullptr) return ECombatState::ECState_MAX;
+	return Combat->CombatState;
 }
 
