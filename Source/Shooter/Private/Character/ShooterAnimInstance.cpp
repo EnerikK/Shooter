@@ -78,4 +78,6 @@ void UShooterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		}
 	}
 	bUseFabrik = Character->GetCombatState() != ECombatState::ECState_Reloading;
+	bUseAimOffSets = Character->GetCombatState() != ECombatState::ECState_Reloading;
+	bTransformRightHand = Character->GetCombatState() != ECombatState::ECState_Reloading;
 }

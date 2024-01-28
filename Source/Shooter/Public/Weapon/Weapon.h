@@ -15,6 +15,7 @@ class AAmmoEject;
 class UWidgetComponent;
 class USphereComponent;
 class UTexture2D;
+class USoundCue;
 
 UENUM(BlueprintType)
 enum class EWeaponState : uint8
@@ -42,6 +43,7 @@ public:
 	virtual void Fire(const FVector& HitTarget);
 	void Dropped();
 	void SetHudAmmo();
+	void AddAmmo(int32 AmmoToAdd);
 	
 	FORCEINLINE void SetWeaponState(EWeaponState State);
 	FORCEINLINE USphereComponent* GetPickUpSphere() const {return PickUpSphere;}
@@ -49,6 +51,8 @@ public:
 	FORCEINLINE float GetZoomedPov() const {return ZoomPOV;}
 	FORCEINLINE float GetZoomInterpPov() const {return ZoomInterpSpeed;}
 	FORCEINLINE EWeaponType GetWeaponType() const {return WeaponType;}
+	FORCEINLINE int32 GetAmmo() const {return Ammo;}
+	FORCEINLINE int32 GetMagCapacity() const {return MagCapacity;}
 	bool IsEmpty();
 
 	/*
@@ -78,6 +82,12 @@ public:
 
 	UPROPERTY(EditAnywhere,Category="Crosshair")
 	UTexture2D* CrosshairBottom;
+	/*
+	* Texture for the cross-hairs end
+	*/
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* EquipSound;
 	
 protected:
 	

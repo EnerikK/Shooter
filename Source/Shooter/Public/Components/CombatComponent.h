@@ -63,6 +63,9 @@ protected:
 	void ServerReload();
 	
 	void HandleReload();
+	
+	int32 AmountToReload();
+	
 private:
 	
 	AShooterCharacter* Character;
@@ -134,7 +137,7 @@ private:
 
 	
 	TMap<EWeaponType,int32> CarriedAmmoMap; //TODO : Understand how tmaps and hash functions work better
-	UPROPERTY()
+	UPROPERTY(EditAnywhere)
 	int32 StartingARAmmo = 30;
 	void InitializeCarriedAmmo();
 
@@ -143,5 +146,7 @@ private:
 	
 	UFUNCTION()
 	void OnRep_CombatState();
+
+	void UpdateAmmoValues();
 	
 };

@@ -80,6 +80,13 @@ private:
 
 	UPROPERTY(BlueprintReadOnly,Category="Movement",meta=(AllowPrivateAccess = "true"))
 	bool bUseFabrik;
+	
+	UPROPERTY(BlueprintReadOnly,Category="Movement",meta=(AllowPrivateAccess = "true"))
+	bool bUseAimOffSets;
+	
+	UPROPERTY(BlueprintReadOnly,Category="Movement",meta=(AllowPrivateAccess = "true"))
+	bool bTransformRightHand;
+
 
 	
 };

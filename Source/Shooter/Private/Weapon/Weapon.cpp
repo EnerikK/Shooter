@@ -201,6 +201,11 @@ void AWeapon::SetHudAmmo()
 		}
 	}
 }
+void AWeapon::AddAmmo(int32 AmmoToAdd)
+{
+	Ammo = FMath::Clamp(Ammo - AmmoToAdd,0,MagCapacity);
+	SetHudAmmo();
+}
 void AWeapon::ShowPickUpWidget(bool bShowWidget)
 {
 	if(PickUpWidget)
