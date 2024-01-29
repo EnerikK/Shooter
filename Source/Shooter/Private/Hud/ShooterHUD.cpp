@@ -9,7 +9,6 @@
 void AShooterHUD::BeginPlay()
 {
 	Super::BeginPlay();
-	AddHudOverlay();
 }
 
 void AShooterHUD::AddHudOverlay()

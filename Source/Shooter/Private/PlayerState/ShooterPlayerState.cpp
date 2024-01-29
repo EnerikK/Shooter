@@ -2,7 +2,6 @@
 
 
 #include "PlayerState/ShooterPlayerState.h"
-
 #include "Character/ShooterCharacter.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/ShooterPlayerController.h"
@@ -56,6 +55,7 @@ void AShooterPlayerState::AddToDefeats(int32 DefeatsAmount)
 
 void AShooterPlayerState::OnRep_Defeats()
 {
+
 	Character = Character == nullptr ? Cast<AShooterCharacter>(GetPawn()) : Character;
 	if(Character && Character->Controller)
 	{

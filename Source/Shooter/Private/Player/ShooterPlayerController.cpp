@@ -8,13 +8,20 @@
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/GameMode.h"
 #include "Hud/HudOverlay.h"
 #include "Hud/ShooterHUD.h"
-
+#include "Net/UnrealNetwork.h"
 
 AShooterPlayerController::AShooterPlayerController()
 {
 	bReplicates = true;
+}
+void AShooterPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AShooterPlayerController,MatchState);
+	
 }
 void AShooterPlayerController::BeginPlay()
 {
@@ -31,6 +38,36 @@ void AShooterPlayerController::BeginPlay()
 void AShooterPlayerController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	SetHudTime();
+	CheckTimeSync(DeltaSeconds);
+	PollInit();
+	
+}
+void AShooterPlayerController::CheckTimeSync(float DeltaSeconds)
+{
+	TimeSyncRunningTime += DeltaSeconds;
+	if(IsLocalController() && TimeSyncRunningTime > TimeSyncFrequency)
+ 	{
+ 		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
+ 		TimeSyncRunningTime = 0.f;
+ 	}
+}
+void AShooterPlayerController::PollInit()
+{
+	if(HudOverlay == nullptr)
+	{
+		if(ShooterHUD && ShooterHUD->HudOverlay)
+		{
+			HudOverlay = ShooterHUD->HudOverlay;
+			if(HudOverlay)
+			{
+				SetHudHealth(HudHealth,HudMaxHealth);
+				SetHudScore(HudScore);
+				SetHudDefeats(HudDefeats);
+			}
+		}
+	}
+	
 }
 void AShooterPlayerController::OnPossess(APawn* InPawn)
 {
@@ -53,6 +90,12 @@ void AShooterPlayerController::SetHudHealth(float Health, float MaxHealth)
 		FString HealthText = FString::Printf(TEXT("%d/%d"),FMath::CeilToInt(Health),FMath::CeilToInt(MaxHealth));
 		ShooterHUD->HudOverlay->HealthText->SetText(FText::FromString(HealthText));
 	}
+	else
+	{
+		bInitializeHudOverlay = true;
+		HudHealth = Health;
+		HudMaxHealth = MaxHealth;
+	}
 	
 }
 void AShooterPlayerController::SetHudScore(float Score)
@@ -64,6 +107,11 @@ void AShooterPlayerController::SetHudScore(float Score)
 		FString ScoreText = FString::Printf(TEXT("%d"),FMath::FloorToInt(Score));
 		ShooterHUD->HudOverlay->ScoreAmount->SetText(FText::FromString(ScoreText));
 	}
+	else
+	{
+		bInitializeHudOverlay = true;
+		HudScore = Score;
+	}
 }
 void AShooterPlayerController::SetHudDefeats(int32 Defeats)
 {
@@ -74,6 +122,11 @@ void AShooterPlayerController::SetHudDefeats(int32 Defeats)
 		FString DefeatsText = FString::Printf(TEXT("%d"),Defeats);
 		ShooterHUD->HudOverlay->DefeatsAmount->SetText(FText::FromString(DefeatsText));
 		
+	}
+	else
+	{
+		bInitializeHudOverlay = true;
+		HudDefeats = Defeats;
 	}
 }
 void AShooterPlayerController::SetHudWeaponAmmo(int32 Ammo)
@@ -98,6 +151,81 @@ void AShooterPlayerController::SetHudCarriedAmmo(int32 Ammo)
 		ShooterHUD->HudOverlay->CarriedAmmo->SetText(FText::FromString(AmmoText));
 		
 	}
+}
+void AShooterPlayerController::SetHudMatchCountdown(float CountDownTime)
+{
+	ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
+	bool bHudValid = ShooterHUD && ShooterHUD->HudOverlay && ShooterHUD->HudOverlay->MatchCountdownText;
+	if(bHudValid)
+	{
+		int32 Minutes = FMath::FloorToInt(CountDownTime / 60.f);
+		int32 Seconds = CountDownTime - Minutes * 60;
+		
+		FString CountdownText = FString::Printf(TEXT("%02d:%02d"),Minutes,Seconds);
+		ShooterHUD->HudOverlay->MatchCountdownText->SetText(FText::FromString(CountdownText));
+		
+	}
+}
+
+float AShooterPlayerController::GetServerTime()
+{
+	return GetWorld()->GetTimeSeconds() + ClientServerDelta;
+}
+
+void AShooterPlayerController::ReceivedPlayer()
+{
+	Super::ReceivedPlayer();
+	if(IsLocalController())
+	{
+		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
+	}
+	
+}
+void AShooterPlayerController::OnMatchStateSet(FName State)
+{
+	MatchState = State;
+	if(MatchState == MatchState::InProgress)
+	{
+		ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
+		if(ShooterHUD)
+		{
+			ShooterHUD->AddHudOverlay();
+		}
+	}
+}
+void AShooterPlayerController::OnRep_MatchState()
+{
+	if(MatchState == MatchState::InProgress)
+	{
+		ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
+		if(ShooterHUD)
+		{
+			ShooterHUD->AddHudOverlay();
+		}
+	}
+}
+void AShooterPlayerController::SetHudTime()
+{
+	uint32 SecondsLeft = FMath::CeilToInt(MatchTime - GetServerTime());
+	if(CountdownInt != SecondsLeft)
+	{
+		SetHudMatchCountdown(MatchTime - GetServerTime());
+	}
+	CountdownInt = SecondsLeft;
+	
+}
+void AShooterPlayerController::ServerRequestServerTime_Implementation(float TimeOfClientRequest)
+{
+	float ServerTimeOfReceive = GetWorld()->GetTimeSeconds();
+	ClientReportServerTime(TimeOfClientRequest,ServerTimeOfReceive);
+}
+void AShooterPlayerController::ClientReportServerTime_Implementation(float TimeOfClientRequest,
+	float TimeServerReceivedClientRequest)
+{
+	float RoundTripTime = GetWorld()->GetTimeSeconds() - TimeOfClientRequest;
+	float CurrentServerTime = TimeServerReceivedClientRequest + (0.5f * RoundTripTime);
+	ClientServerDelta = CurrentServerTime - GetWorld()->GetTimeSeconds();
+	
 }
 void AShooterPlayerController::SetupInputComponent()
 {

@@ -18,6 +18,24 @@ class SHOOTER_API AShooterGameModeBase : public AGameMode
 
 public:
 
+	AShooterGameModeBase();
+	virtual void Tick(float DeltaSeconds) override;
+
+	UPROPERTY(EditDefaultsOnly)
+	float InterventionTime = 3.f;
+
+	float LevelStartingTime = 0.f;
+
+	
 	virtual void PlayerElimination(AShooterCharacter* EliminatedCharacter,AShooterPlayerController* VictimController,AShooterPlayerController* AttackerController);
 	virtual void RequestRespawn(ACharacter* EliminatedCharacter,AController* EliminatedController);
+
+protected:
+	
+	virtual void BeginPlay() override;
+	virtual void OnMatchStateSet() override;
+	
+private:
+
+	float CountdownTime = 0.f;
 };

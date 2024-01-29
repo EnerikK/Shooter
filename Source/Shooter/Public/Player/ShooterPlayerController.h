@@ -8,6 +8,7 @@
 #include "ShooterPlayerController.generated.h"
 
 
+class UHudOverlay;
 class AShooterHUD;
 class AWeapon;
 class AShooterCharacter;
@@ -28,24 +29,71 @@ public:
 	AShooterPlayerController();
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void OnPossess(APawn* InPawn) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void SetHudHealth(float Health , float MaxHealth);
 	void SetHudScore(float Score);
 	void SetHudDefeats(int32 Defeats);
 	void SetHudWeaponAmmo(int32 Ammo);
 	void SetHudCarriedAmmo(int32 Ammo);
+	void SetHudMatchCountdown(float CountDownTime);
 
+	virtual float GetServerTime(); //Sync with server world clock
+	virtual void ReceivedPlayer() override; //Sync With server clock as soon as possilbe
+	void OnMatchStateSet(FName State);
 protected:
 
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
+	void SetHudTime();
 
+	/*
+	 * Syncing Time between client and server 
+	 */
+	//Reqeusts The Current ServerTime , passing the clients time when the request was sent
+	UFUNCTION(Server,Reliable)
+	void ServerRequestServerTime(float TimeOfClientRequest);
+
+	//Report the current server time to the client in responce to serverReqeustServerTime 
+	UFUNCTION(Client,Reliable)
+	void ClientReportServerTime(float TimeOfClientRequest,float TimeServerReceivedClientRequest);
+
+	float ClientServerDelta = 0.f; //Diffrence Between client and server time ;
+
+	UPROPERTY(EditAnywhere, Category="Time")
+	float TimeSyncFrequency = 5.f;
+
+	float TimeSyncRunningTime = 0.f;
+
+	void CheckTimeSync(float DeltaSeconds);
+
+	void PollInit();
+	
 private:
 
 	AShooterHUD* ShooterHUD;
 
 	UPROPERTY(VisibleAnywhere)
 	UCombatComponent* Combat;
+
+	float MatchTime = 120.f;
+	uint32 CountdownInt = 0;
+
+	UPROPERTY(ReplicatedUsing=OnRep_MatchState)
+	FName MatchState;
+
+	UFUNCTION()
+	void OnRep_MatchState();
+
+	UPROPERTY()
+	UHudOverlay* HudOverlay;
+
+	bool bInitializeHudOverlay = false;
+
+	float HudHealth;
+	float HudMaxHealth;
+	float HudScore;
+	int32 HudDefeats;
 	
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputMappingContext> PlayerContext;

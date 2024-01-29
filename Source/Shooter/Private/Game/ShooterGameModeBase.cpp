@@ -8,6 +8,44 @@
 #include "Player/ShooterPlayerController.h"
 #include "PlayerState/ShooterPlayerState.h"
 
+AShooterGameModeBase::AShooterGameModeBase()
+{
+	bDelayedStart = true;
+	
+}
+void AShooterGameModeBase::BeginPlay()
+{
+	Super::BeginPlay();
+
+	LevelStartingTime = GetWorld()->GetTimeSeconds();
+}
+
+void AShooterGameModeBase::OnMatchStateSet()
+{
+	Super::OnMatchStateSet();
+	for(FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+	{
+		AShooterPlayerController* ShooterPlayer = Cast<AShooterPlayerController>(*Iterator);
+		if(ShooterPlayer)
+		{
+			ShooterPlayer->OnMatchStateSet(MatchState);	
+		}
+	}
+	
+}
+void AShooterGameModeBase::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if(MatchState == MatchState::WaitingToStart)
+	{
+		CountdownTime = InterventionTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		if(CountdownTime <= 0.f)
+		{
+			StartMatch();
+		}
+	}
+}
 void AShooterGameModeBase::PlayerElimination(AShooterCharacter* EliminatedCharacter,
                                              AShooterPlayerController* VictimController, AShooterPlayerController* AttackerController)
 {

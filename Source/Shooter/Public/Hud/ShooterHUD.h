@@ -43,12 +43,13 @@ public:
 	UPROPERTY(EditAnywhere,Category="Player Stats")
 	TSubclassOf<UUserWidget> HudOverlayClass;
 	
+	void AddHudOverlay();
+	UPROPERTY()
 	UHudOverlay* HudOverlay;
 
 protected:
 
 	virtual void BeginPlay() override;
-	void AddHudOverlay();
 
 private:
 	
@@ -57,5 +58,4 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float MaxCrosshairSpread = 15.f;
-
 };

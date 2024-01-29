@@ -187,10 +187,10 @@ void UCombatComponent::OnRep_CombatState()
 		HandleReload();
 		break;
 	case ECombatState::ECState_Unoccupied:
-		if(bFireButtonPressed)
+		/*if(bFireButtonPressed)
 		{
 			Fire();
-		}
+		}*/
 		break;
 	}
 	
