@@ -24,6 +24,9 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	float InterventionTime = 3.f;
 
+	UPROPERTY(EditDefaultsOnly)
+	float MatchTime = 20.f;
+
 	float LevelStartingTime = 0.f;
 
 	

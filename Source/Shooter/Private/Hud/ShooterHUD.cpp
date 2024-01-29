@@ -4,6 +4,7 @@
 #include "Hud/ShooterHUD.h"
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/PlayerController.h"
+#include "Hud/Announcement.h"
 #include "Hud/HudOverlay.h"
 
 void AShooterHUD::BeginPlay()
@@ -18,8 +19,17 @@ void AShooterHUD::AddHudOverlay()
 	{
 		HudOverlay = CreateWidget<UHudOverlay>(PlayerController,HudOverlayClass);
 		HudOverlay->AddToViewport();
-		
 	}
+}
+void AShooterHUD::AddAnnouncement()
+{
+	APlayerController* PlayerController = GetOwningPlayerController();
+	if(PlayerController && AnnouncementClass)
+	{
+		Announcement = CreateWidget<UAnnouncement>(PlayerController,AnnouncementClass);
+		Announcement->AddToViewport();
+	}
+	
 }
 void AShooterHUD::DrawHUD()
 {
