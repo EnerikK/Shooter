@@ -36,11 +36,14 @@ public:
 	void SetHudDefeats(int32 Defeats);
 	void SetHudWeaponAmmo(int32 Ammo);
 	void SetHudCarriedAmmo(int32 Ammo);
-	void SetHudMatchCountdown(float CountDownTime);
+	void SetHudMatchCountdown(float CountdownTime);
+	void SetHudAnnouncementCountdown(float CountdownTime);
 
 	virtual float GetServerTime(); //Sync with server world clock
 	virtual void ReceivedPlayer() override; //Sync With server clock as soon as possilbe
 	void OnMatchStateSet(FName State);
+	void HandleMatchHasStarted();
+	
 protected:
 
 	virtual void BeginPlay() override;
@@ -68,6 +71,12 @@ protected:
 	void CheckTimeSync(float DeltaSeconds);
 
 	void PollInit();
+
+	UFUNCTION(Server,Reliable)
+	void ServerCheckMatchState();
+
+	UFUNCTION(Client,Reliable)
+	void ClientJoinMidGame(FName StateOfMatch,float Intervention,float Match,float StartingTime);
 	
 private:
 
@@ -76,7 +85,9 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	UCombatComponent* Combat;
 
-	float MatchTime = 120.f;
+	float LevelStartingTime = 0.f;
+	float MatchTime = 0.f;
+	float InterventionTime = 0.f;
 	uint32 CountdownInt = 0;
 
 	UPROPERTY(ReplicatedUsing=OnRep_MatchState)

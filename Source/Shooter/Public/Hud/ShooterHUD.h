@@ -6,6 +6,7 @@
 #include "GameFramework/HUD.h"
 #include "ShooterHUD.generated.h"
 
+class UAnnouncement;
 class UHudOverlay;
 class UTexture2D;
 
@@ -37,15 +38,20 @@ class SHOOTER_API AShooterHUD : public AHUD
 public:
 
 	virtual void DrawHUD() override;
-	
-	FORCEINLINE void SetHudPackage(const FHUDPackage& Package) {HudPackage = Package;}
 
 	UPROPERTY(EditAnywhere,Category="Player Stats")
 	TSubclassOf<UUserWidget> HudOverlayClass;
-	
-	void AddHudOverlay();
 	UPROPERTY()
 	UHudOverlay* HudOverlay;
+	void AddHudOverlay();
+
+	UPROPERTY(EditAnywhere,Category="Announcements")
+	TSubclassOf<UUserWidget> AnnouncementClass;
+	UPROPERTY()
+	UAnnouncement* Announcement;
+	void AddAnnouncement();
+
+	FORCEINLINE void SetHudPackage(const FHUDPackage& Package) {HudPackage = Package;}
 
 protected:
 

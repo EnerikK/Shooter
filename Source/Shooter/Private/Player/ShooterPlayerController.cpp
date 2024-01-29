@@ -7,10 +7,13 @@
 #include "Character/ShooterCharacter.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
+#include "Game/ShooterGameModeBase.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/GameMode.h"
+#include "Hud/Announcement.h"
 #include "Hud/HudOverlay.h"
 #include "Hud/ShooterHUD.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
 AShooterPlayerController::AShooterPlayerController()
@@ -26,14 +29,15 @@ void AShooterPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 void AShooterPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-
-	ShooterHUD = Cast<AShooterHUD>(GetHUD());
-
+	
 	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
 	if(Subsystem)
 	{
 		Subsystem->AddMappingContext(PlayerContext,0);
 	}
+	
+	ShooterHUD = Cast<AShooterHUD>(GetHUD());
+	ServerCheckMatchState();
 }
 void AShooterPlayerController::Tick(float DeltaSeconds)
 {
@@ -66,6 +70,34 @@ void AShooterPlayerController::PollInit()
 				SetHudDefeats(HudDefeats);
 			}
 		}
+	}
+}
+void AShooterPlayerController::ServerCheckMatchState_Implementation()
+{
+	AShooterGameModeBase* GameMode = Cast<AShooterGameModeBase>(UGameplayStatics::GetGameMode(this));
+	if(GameMode)
+	{
+		InterventionTime = GameMode->InterventionTime;
+		MatchTime = GameMode->MatchTime;
+		LevelStartingTime = GameMode->LevelStartingTime;
+		MatchState = GameMode->GetMatchState();
+		ClientJoinMidGame(MatchState,InterventionTime,MatchTime,LevelStartingTime);
+		if(ShooterHUD && MatchState == MatchState::WaitingToStart)
+		{
+			ShooterHUD->AddAnnouncement();
+		}
+	}
+}
+void AShooterPlayerController::ClientJoinMidGame_Implementation(FName StateOfMatch,float Intervention,float Match,float StartingTime)
+{
+	InterventionTime = Intervention;
+	MatchTime = Match;
+	LevelStartingTime = StartingTime;
+	MatchState = StateOfMatch;
+	OnMatchStateSet(MatchState);
+	if(ShooterHUD && MatchState == MatchState::WaitingToStart)
+	{
+		ShooterHUD->AddAnnouncement();
 	}
 	
 }
@@ -152,21 +184,35 @@ void AShooterPlayerController::SetHudCarriedAmmo(int32 Ammo)
 		
 	}
 }
-void AShooterPlayerController::SetHudMatchCountdown(float CountDownTime)
+void AShooterPlayerController::SetHudMatchCountdown(float CountdownTime)
 {
 	ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
 	bool bHudValid = ShooterHUD && ShooterHUD->HudOverlay && ShooterHUD->HudOverlay->MatchCountdownText;
 	if(bHudValid)
 	{
-		int32 Minutes = FMath::FloorToInt(CountDownTime / 60.f);
-		int32 Seconds = CountDownTime - Minutes * 60;
+		int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f);
+		int32 Seconds = CountdownTime - Minutes * 60;
 		
 		FString CountdownText = FString::Printf(TEXT("%02d:%02d"),Minutes,Seconds);
 		ShooterHUD->HudOverlay->MatchCountdownText->SetText(FText::FromString(CountdownText));
 		
 	}
 }
-
+void AShooterPlayerController::SetHudAnnouncementCountdown(float CountdownTime)
+{
+	ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
+	bool bHudValid = ShooterHUD && ShooterHUD->Announcement && ShooterHUD->Announcement->InterventionTime;
+	if(bHudValid)
+	{
+		int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f);
+		int32 Seconds = CountdownTime - Minutes * 60;
+		
+		FString CountdownText = FString::Printf(TEXT("%02d:%02d"),Minutes,Seconds);
+		ShooterHUD->Announcement->InterventionTime->SetText(FText::FromString(CountdownText));
+		
+	}
+	
+}
 float AShooterPlayerController::GetServerTime()
 {
 	return GetWorld()->GetTimeSeconds() + ClientServerDelta;
@@ -184,13 +230,10 @@ void AShooterPlayerController::ReceivedPlayer()
 void AShooterPlayerController::OnMatchStateSet(FName State)
 {
 	MatchState = State;
+	
 	if(MatchState == MatchState::InProgress)
 	{
-		ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
-		if(ShooterHUD)
-		{
-			ShooterHUD->AddHudOverlay();
-		}
+		HandleMatchHasStarted();
 	}
 }
 void AShooterPlayerController::OnRep_MatchState()
@@ -198,18 +241,40 @@ void AShooterPlayerController::OnRep_MatchState()
 	if(MatchState == MatchState::InProgress)
 	{
 		ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
-		if(ShooterHUD)
+		if (ShooterHUD)
+		HandleMatchHasStarted();
+	}
+}
+ 
+void AShooterPlayerController:: HandleMatchHasStarted()
+{
+	ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
+	if(ShooterHUD)
+	{
+		ShooterHUD->AddHudOverlay();
+		if(ShooterHUD->Announcement)
 		{
-			ShooterHUD->AddHudOverlay();
+			ShooterHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 }
 void AShooterPlayerController::SetHudTime()
 {
-	uint32 SecondsLeft = FMath::CeilToInt(MatchTime - GetServerTime());
+	float TimeLeft = 0.f;
+	if(MatchState == MatchState::WaitingToStart) TimeLeft = InterventionTime - GetServerTime() + LevelStartingTime;
+	else if(MatchState == MatchState::InProgress) TimeLeft = InterventionTime + MatchTime - GetServerTime() + LevelStartingTime;
+	
+	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
 	if(CountdownInt != SecondsLeft)
 	{
-		SetHudMatchCountdown(MatchTime - GetServerTime());
+		if(MatchState == MatchState::WaitingToStart)
+		{
+			SetHudAnnouncementCountdown(TimeLeft);
+		}
+		if(MatchState == MatchState::InProgress)
+		{
+			SetHudAnnouncementCountdown(TimeLeft);
+		}
 	}
 	CountdownInt = SecondsLeft;
 	
