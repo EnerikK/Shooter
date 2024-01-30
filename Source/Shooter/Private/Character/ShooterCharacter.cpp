@@ -54,6 +54,7 @@ void AShooterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	
 	DOREPLIFETIME_CONDITION(AShooterCharacter,OverlappingWeapon,COND_OwnerOnly);
 	DOREPLIFETIME(AShooterCharacter,Health);
+
 	
 }
 void AShooterCharacter::BeginPlay()
@@ -101,11 +102,9 @@ void AShooterCharacter::MulticastElim_Implementation()
 	StartDissolve();
 
 	//DisableCharacterMovement
-	GetCharacterMovement()->DisableMovement();
-	GetCharacterMovement()->StopMovementImmediately();
 	if(ShooterPlayerController)
 	{
-		DisableInput(ShooterPlayerController);
+		ShooterPlayerController->bDisableGameplay = true;
 	}
 	//Disable Collision
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -154,13 +153,30 @@ void AShooterCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	AimOffset(DeltaTime);
+	RotateInPlace(DeltaTime);
 	HideCamera();
 	PollInit();
 	
 }
+void AShooterCharacter::RotateInPlace(float DeltaTime)
+{
+	if(ShooterPlayerController)
+	{
+		if(ShooterPlayerController->bDisableGameplay)
+		{
+			bUseControllerRotationYaw = false;
+			TurningInPlace = ETurnInPlace::ETurnIP_NotTurning;
+			return;
+			
+		}
+	}
+	AimOffset(DeltaTime);
+	
+}
+
 void AShooterCharacter::AimOffset(float DeltaTime)
 {
+	
 	//There's a Bug on the Yaw when you use it on Multiplayer Fix when you can if  you can future me
 	if (Combat && Combat->EquippedWeapon == nullptr) return;
 	FVector Velocity = GetVelocity();
@@ -236,6 +252,16 @@ void AShooterCharacter::PostInitializeComponents()
 	}
 	
 }
+
+void AShooterCharacter::Destroyed()
+{
+	Super::Destroyed();
+	if(Combat && Combat->EquippedWeapon)
+	{
+		Combat->EquippedWeapon->Destroy();
+	}
+}
+
 void AShooterCharacter::PlayFireMontage(bool bAiming)
 {
 	if(Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
@@ -361,9 +387,7 @@ void AShooterCharacter::FireButtonPressed()
 	{
 		Combat->FireButtonPressed(true);
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Firing!"));	
-
 	}
-	
 }
 void AShooterCharacter::FireButtonReleased()
 {

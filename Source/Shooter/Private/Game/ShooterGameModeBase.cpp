@@ -8,6 +8,10 @@
 #include "Player/ShooterPlayerController.h"
 #include "PlayerState/ShooterPlayerState.h"
 
+namespace MatchState
+{
+	const FName Cooldown = FName("Cooldown");
+}
 AShooterGameModeBase::AShooterGameModeBase()
 {
 	bDelayedStart = true;
@@ -43,6 +47,22 @@ void AShooterGameModeBase::Tick(float DeltaSeconds)
 		if(CountdownTime <= 0.f)
 		{
 			StartMatch();
+		}
+	}
+	else if (MatchState == MatchState::InProgress)
+	{
+		CountdownTime = InterventionTime + MatchTime - GetWorld()->GetTimeSeconds()+LevelStartingTime;
+		if(CountdownTime <= 0.f)
+		{
+			SetMatchState(MatchState::Cooldown);
+		}
+	}
+	else if (MatchState == MatchState::Cooldown)
+	{
+		CountdownTime = CooldownTime + InterventionTime + MatchTime - GetWorld()->GetTimeSeconds()+LevelStartingTime;
+		if(CountdownTime < 0.f)
+		{
+			RestartGame();
 		}
 	}
 }

@@ -5,6 +5,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Character/ShooterCharacter.h"
+#include "Components/CombatComponent.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Game/ShooterGameModeBase.h"
@@ -24,6 +25,8 @@ void AShooterPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AShooterPlayerController,MatchState);
+	DOREPLIFETIME(AShooterPlayerController,bDisableGameplay);
+
 	
 }
 void AShooterPlayerController::BeginPlay()
@@ -45,6 +48,7 @@ void AShooterPlayerController::Tick(float DeltaSeconds)
 	SetHudTime();
 	CheckTimeSync(DeltaSeconds);
 	PollInit();
+	
 	
 }
 void AShooterPlayerController::CheckTimeSync(float DeltaSeconds)
@@ -79,19 +83,17 @@ void AShooterPlayerController::ServerCheckMatchState_Implementation()
 	{
 		InterventionTime = GameMode->InterventionTime;
 		MatchTime = GameMode->MatchTime;
+		CooldownTime = GameMode->CooldownTime;
 		LevelStartingTime = GameMode->LevelStartingTime;
 		MatchState = GameMode->GetMatchState();
-		ClientJoinMidGame(MatchState,InterventionTime,MatchTime,LevelStartingTime);
-		if(ShooterHUD && MatchState == MatchState::WaitingToStart)
-		{
-			ShooterHUD->AddAnnouncement();
-		}
+		ClientJoinMidGame(MatchState,CooldownTime,InterventionTime,MatchTime,LevelStartingTime);
 	}
 }
-void AShooterPlayerController::ClientJoinMidGame_Implementation(FName StateOfMatch,float Intervention,float Match,float StartingTime)
+void AShooterPlayerController::ClientJoinMidGame_Implementation(FName StateOfMatch,float Cooldown,float Intervention,float Match,float StartingTime)
 {
 	InterventionTime = Intervention;
 	MatchTime = Match;
+	CooldownTime = Cooldown;
 	LevelStartingTime = StartingTime;
 	MatchState = StateOfMatch;
 	OnMatchStateSet(MatchState);
@@ -190,6 +192,11 @@ void AShooterPlayerController::SetHudMatchCountdown(float CountdownTime)
 	bool bHudValid = ShooterHUD && ShooterHUD->HudOverlay && ShooterHUD->HudOverlay->MatchCountdownText;
 	if(bHudValid)
 	{
+		if(CountdownTime < 0.f)
+		{
+			ShooterHUD->HudOverlay->MatchCountdownText->SetText(FText());
+			return;
+		}
 		int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f);
 		int32 Seconds = CountdownTime - Minutes * 60;
 		
@@ -204,18 +211,23 @@ void AShooterPlayerController::SetHudAnnouncementCountdown(float CountdownTime)
 	bool bHudValid = ShooterHUD && ShooterHUD->Announcement && ShooterHUD->Announcement->InterventionTime;
 	if(bHudValid)
 	{
+		if(CountdownTime < 0.f)
+		{
+			ShooterHUD->Announcement->InterventionTime->SetText(FText());
+			return;
+		}
 		int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f);
 		int32 Seconds = CountdownTime - Minutes * 60;
 		
 		FString CountdownText = FString::Printf(TEXT("%02d:%02d"),Minutes,Seconds);
 		ShooterHUD->Announcement->InterventionTime->SetText(FText::FromString(CountdownText));
-		
 	}
 	
 }
 float AShooterPlayerController::GetServerTime()
 {
-	return GetWorld()->GetTimeSeconds() + ClientServerDelta;
+	if (HasAuthority()) return GetWorld()->GetTimeSeconds();
+	else return GetWorld()->GetTimeSeconds() + ClientServerDelta;
 }
 
 void AShooterPlayerController::ReceivedPlayer()
@@ -235,17 +247,24 @@ void AShooterPlayerController::OnMatchStateSet(FName State)
 	{
 		HandleMatchHasStarted();
 	}
+	else if (MatchState == MatchState::Cooldown)
+	{
+		HandleCooldown();
+	}
 }
 void AShooterPlayerController::OnRep_MatchState()
 {
 	if(MatchState == MatchState::InProgress)
 	{
-		ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
-		if (ShooterHUD)
 		HandleMatchHasStarted();
 	}
+	else if (MatchState == MatchState::Cooldown)
+	{
+		HandleCooldown();
+		DisableInput(this);
+	}
 }
- 
+
 void AShooterPlayerController:: HandleMatchHasStarted()
 {
 	ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
@@ -258,22 +277,51 @@ void AShooterPlayerController:: HandleMatchHasStarted()
 		}
 	}
 }
+void AShooterPlayerController::HandleCooldown()
+{
+	ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
+	if(ShooterHUD)
+	{
+		ShooterHUD->HudOverlay->RemoveFromParent();
+		if(ShooterHUD->Announcement && ShooterHUD->Announcement->AnnouncementText && ShooterHUD->Announcement->InfoText)
+		{
+			ShooterHUD->Announcement->SetVisibility(ESlateVisibility::Visible);
+			FString AnnouncementText("New Match Starts In : ");
+			ShooterHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
+			ShooterHUD->Announcement->InfoText->SetText(FText());
+		}
+	}
+	bDisableGameplay = true;
+	if(Combat)
+	{
+		Combat->FireButtonPressed(false);
+	}
+}
 void AShooterPlayerController::SetHudTime()
 {
 	float TimeLeft = 0.f;
 	if(MatchState == MatchState::WaitingToStart) TimeLeft = InterventionTime - GetServerTime() + LevelStartingTime;
 	else if(MatchState == MatchState::InProgress) TimeLeft = InterventionTime + MatchTime - GetServerTime() + LevelStartingTime;
-	
+	else if(MatchState == MatchState::Cooldown) TimeLeft = CooldownTime+ InterventionTime + MatchTime - GetServerTime() + LevelStartingTime;
 	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
+	
+	if(HasAuthority())
+	{
+		ShooterGameMode = ShooterGameMode == nullptr ? Cast<AShooterGameModeBase>(UGameplayStatics::GetGameMode(this)) : ShooterGameMode;
+		if(ShooterGameMode)
+		{
+			SecondsLeft = FMath::CeilToInt(ShooterGameMode->GetCountdownTime() + LevelStartingTime);
+		}
+	}
 	if(CountdownInt != SecondsLeft)
 	{
-		if(MatchState == MatchState::WaitingToStart)
+		if(MatchState == MatchState::WaitingToStart || MatchState == MatchState::Cooldown)
 		{
 			SetHudAnnouncementCountdown(TimeLeft);
 		}
 		if(MatchState == MatchState::InProgress)
 		{
-			SetHudAnnouncementCountdown(TimeLeft);
+			SetHudMatchCountdown(TimeLeft);
 		}
 	}
 	CountdownInt = SecondsLeft;
@@ -327,6 +375,7 @@ void AShooterPlayerController::SetupInputComponent()
 }
 void AShooterPlayerController::Move(const FInputActionValue& Value)
 {
+	if(bDisableGameplay) return;
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
 	APawn* ControlledPawn = GetPawn<APawn>();
@@ -378,6 +427,8 @@ void AShooterPlayerController::Look(const FInputActionValue& Value)
 }
 void AShooterPlayerController::Jump(const FInputActionValue& Value)
 {
+	if(bDisableGameplay) return;
+
 	if(ACharacter* ControlledCharacter = GetPawn<ACharacter>())
 	{
 		ControlledCharacter->Jump();
@@ -385,34 +436,70 @@ void AShooterPlayerController::Jump(const FInputActionValue& Value)
 }
 void AShooterPlayerController::Equip(const FInputActionValue& Value)
 {
+	if(bDisableGameplay) return;
+
 	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
-	ControlledCharacter->EquipButtonPressed();
+	if(ControlledCharacter)
+	{
+		ControlledCharacter->EquipButtonPressed();
+	}
+	
 }
 void AShooterPlayerController::Crouch(const FInputActionValue& Value)
 {
+	if(bDisableGameplay) return;
+	
 	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
-	ControlledCharacter->CrouchButtonPressed();
+	if(ControlledCharacter)
+	{
+		ControlledCharacter->CrouchButtonPressed();
+	}
+	
 	
 }
 void AShooterPlayerController::Aim(const FInputActionValue& Value)
 {
+	if(bDisableGameplay) return;
+
 	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
-	ControlledCharacter->AimButtonPressed();
+	if(ControlledCharacter)
+	{
+		ControlledCharacter->AimButtonPressed();
+	}
+	
 }
 void AShooterPlayerController::ReleaseAim(const FInputActionValue& Value)
 {
+	if(bDisableGameplay) return;
+
 	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
-	ControlledCharacter->AimButtonReleased();
+	if(ControlledCharacter)
+	{
+		ControlledCharacter->AimButtonReleased();
+	}
+	
 }
 void AShooterPlayerController::Fire(const FInputActionValue& Value)
 {
+	if(bDisableGameplay) return;
+
 	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
-	ControlledCharacter->FireButtonPressed();
+	if(ControlledCharacter)
+	{
+		ControlledCharacter->FireButtonPressed();
+	}
+	
 }
 
 void AShooterPlayerController::Reload(const FInputActionValue& Value)
 {
+	if(bDisableGameplay) return;
+
 	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
-	ControlledCharacter->ReloadButtonPressed();
+	if(ControlledCharacter)
+	{
+		ControlledCharacter->ReloadButtonPressed();
+	}
+	
 }
 	

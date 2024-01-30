@@ -29,6 +29,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
+	virtual void Destroyed() override;
 	void PlayFireMontage(bool bAiming);
 	void PlayReloadMontage();
 	void PlayElimMontage();
@@ -38,6 +39,7 @@ public:
 	void Elim();
 	UFUNCTION(NetMulticast,Reliable)
 	void MulticastElim();
+	void RotateInPlace(float DeltaTime);
 	
 	void EquipButtonPressed();
 	void CrouchButtonPressed();
@@ -60,6 +62,7 @@ public:
 	FORCEINLINE bool IsElimmed() const {return bIsElimmed;}
 	FORCEINLINE float GetHealth() const {return Health;}
 	FORCEINLINE float GetMaxHealth() const {return MaxHealth;}
+	FORCEINLINE UCombatComponent* GetCombat() const {return Combat;}
 	ECombatState GetCombatState() const;
 
 
