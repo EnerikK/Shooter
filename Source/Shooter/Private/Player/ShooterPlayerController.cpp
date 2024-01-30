@@ -94,14 +94,13 @@ void AShooterPlayerController::ClientJoinMidGame_Implementation(FName StateOfMat
 	InterventionTime = Intervention;
 	MatchTime = Match;
 	CooldownTime = Cooldown;
-	LevelStartingTime = StartingTime;
-	MatchState = StateOfMatch;
-	OnMatchStateSet(MatchState);
+	LevelStartingTime = GameMode->LevelStartingTime;
+	MatchState = GameMode->GetMatchState();
+	ClientJoinMidGame(MatchState,InterventionTime,MatchTime,LevelStartingTime);
 	if(ShooterHUD && MatchState == MatchState::WaitingToStart)
 	{
 		ShooterHUD->AddAnnouncement();
 	}
-	
 }
 void AShooterPlayerController::OnPossess(APawn* InPawn)
 {
@@ -264,7 +263,6 @@ void AShooterPlayerController::OnRep_MatchState()
 		DisableInput(this);
 	}
 }
-
 void AShooterPlayerController:: HandleMatchHasStarted()
 {
 	ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
@@ -316,7 +314,7 @@ void AShooterPlayerController::SetHudTime()
 	if(CountdownInt != SecondsLeft)
 	{
 		if(MatchState == MatchState::WaitingToStart || MatchState == MatchState::Cooldown)
-		{
+   {
 			SetHudAnnouncementCountdown(TimeLeft);
 		}
 		if(MatchState == MatchState::InProgress)
@@ -324,6 +322,7 @@ void AShooterPlayerController::SetHudTime()
 			SetHudMatchCountdown(TimeLeft);
 		}
 	}
+	
 	CountdownInt = SecondsLeft;
 	
 }

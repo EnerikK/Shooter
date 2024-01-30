@@ -38,7 +38,9 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly)
 	float CooldownTime = 10.f;
-
+  
+	float MatchTime = 20.f;
+  
 	float LevelStartingTime = 0.f;
 
 	FORCEINLINE float GetCountdownTime() const {return CountdownTime;}
