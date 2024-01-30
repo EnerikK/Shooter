@@ -5,6 +5,7 @@
 #include "Character/ShooterCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Player/ShooterPlayerController.h"
 #include "Weapon/Weapon.h"
 #include "Shooter/Types/CombatState.h"
 

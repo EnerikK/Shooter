@@ -8,6 +8,7 @@
 #include "ShooterPlayerController.generated.h"
 
 
+class AShooterGameModeBase;
 class UHudOverlay;
 class AShooterHUD;
 class AWeapon;
@@ -43,6 +44,12 @@ public:
 	virtual void ReceivedPlayer() override; //Sync With server clock as soon as possilbe
 	void OnMatchStateSet(FName State);
 	void HandleMatchHasStarted();
+	void HandleCooldown();
+
+	UPROPERTY(Replicated)
+	bool bDisableGameplay = false;
+
+	FORCEINLINE bool GetDisableGameplay() const {return bDisableGameplay;}
 	
 protected:
 
@@ -76,11 +83,15 @@ protected:
 	void ServerCheckMatchState();
 
 	UFUNCTION(Client,Reliable)
-	void ClientJoinMidGame(FName StateOfMatch,float Intervention,float Match,float StartingTime);
+	void ClientJoinMidGame(FName StateOfMatch,float Cooldown,float Intervention,float Match,float StartingTime);
 	
 private:
 
+	UPROPERTY()
 	AShooterHUD* ShooterHUD;
+	
+	UPROPERTY()
+	AShooterGameModeBase* ShooterGameMode;
 
 	UPROPERTY(VisibleAnywhere)
 	UCombatComponent* Combat;
@@ -88,6 +99,7 @@ private:
 	float LevelStartingTime = 0.f;
 	float MatchTime = 0.f;
 	float InterventionTime = 0.f;
+	float CooldownTime = 0.f;
 	uint32 CountdownInt = 0;
 
 	UPROPERTY(ReplicatedUsing=OnRep_MatchState)
