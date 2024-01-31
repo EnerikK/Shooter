@@ -7,6 +7,8 @@
 #include "Game/ShooterGameModeBase.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "GameState/ShooterGameState.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/ShooterPlayerController.h"
@@ -102,9 +104,13 @@ void AShooterCharacter::MulticastElim_Implementation()
 	StartDissolve();
 
 	//DisableCharacterMovement
-	if(ShooterPlayerController)
+	/*if(ShooterPlayerController)
 	{
 		ShooterPlayerController->bDisableGameplay = true;
+	}*/
+	if(Combat)
+	{
+		Combat->FireButtonPressed(false);
 	}
 	//Disable Collision
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -256,10 +262,16 @@ void AShooterCharacter::PostInitializeComponents()
 void AShooterCharacter::Destroyed()
 {
 	Super::Destroyed();
-	if(Combat && Combat->EquippedWeapon)
+	
+	AShooterGameModeBase* ShooterGameMode = Cast<AShooterGameModeBase>(UGameplayStatics::GetGameMode(this));
+	bool bMatchNotInProgress = ShooterGameMode && ShooterGameMode->GetMatchState() != MatchState::InProgress;
+	
+	if(Combat && Combat->EquippedWeapon && bMatchNotInProgress)
 	{
 		Combat->EquippedWeapon->Destroy();
 	}
+
+	
 }
 
 void AShooterCharacter::PlayFireMontage(bool bAiming)

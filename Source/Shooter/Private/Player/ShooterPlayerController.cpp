@@ -11,11 +11,13 @@
 #include "Game/ShooterGameModeBase.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/GameMode.h"
+#include "GameState/ShooterGameState.h"
 #include "Hud/Announcement.h"
 #include "Hud/HudOverlay.h"
 #include "Hud/ShooterHUD.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "PlayerState/ShooterPlayerState.h"
 
 AShooterPlayerController::AShooterPlayerController()
 {
@@ -268,7 +270,7 @@ void AShooterPlayerController:: HandleMatchHasStarted()
 	ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
 	if(ShooterHUD)
 	{
-		ShooterHUD->AddHudOverlay();
+		if(ShooterHUD->HudOverlay == nullptr)ShooterHUD->AddHudOverlay();
 		if(ShooterHUD->Announcement)
 		{
 			ShooterHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
@@ -286,7 +288,36 @@ void AShooterPlayerController::HandleCooldown()
 			ShooterHUD->Announcement->SetVisibility(ESlateVisibility::Visible);
 			FString AnnouncementText("New Match Starts In : ");
 			ShooterHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
-			ShooterHUD->Announcement->InfoText->SetText(FText());
+
+			AShooterGameState* ShooterGameState = Cast<AShooterGameState>(UGameplayStatics::GetGameState(this));
+			AShooterPlayerState* ShooterPlayerState = GetPlayerState<AShooterPlayerState>();
+			
+			if(ShooterGameState && ShooterPlayerState)
+			{
+				TArray<AShooterPlayerState*> TopPlayers = ShooterGameState->TopScoringPlayer;
+				FString InfoTextString;
+				if(TopPlayers.Num() == 0)
+				{
+					InfoTextString = FString("There is no Winner");
+				}
+				else if (TopPlayers.Num() == 1 && TopPlayers[0] == ShooterPlayerState)
+				{
+					InfoTextString = FString("You are the winner!!!");
+				}
+				else if (TopPlayers.Num() == 1)
+				{
+					InfoTextString = FString::Printf(TEXT("Winner : \n%p"),*TopPlayers[0]->GetPlayerName());
+				}
+				else if (TopPlayers.Num() > 1)
+				{
+					InfoTextString = FString("Player tied for the win: \n");
+					for (auto TiedPlayer : TopPlayers)
+					{
+						InfoTextString.Append(FString::Printf(TEXT("%p\n"),*TiedPlayer->GetPlayerName()));
+					}
+				}
+				ShooterHUD->Announcement->InfoText->SetText(FText::FromString(InfoTextString));
+			}
 		}
 	}
 	bDisableGameplay = true;
