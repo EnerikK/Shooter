@@ -4,6 +4,7 @@
 #include "Game/ShooterGameModeBase.h"
 #include "Character/ShooterCharacter.h"
 #include "GameFramework/PlayerStart.h"
+#include "GameState/ShooterGameState.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/ShooterPlayerController.h"
 #include "PlayerState/ShooterPlayerState.h"
@@ -69,11 +70,17 @@ void AShooterGameModeBase::Tick(float DeltaSeconds)
 void AShooterGameModeBase::PlayerElimination(AShooterCharacter* EliminatedCharacter,
                                              AShooterPlayerController* VictimController, AShooterPlayerController* AttackerController)
 {
+	if(AttackerController == nullptr || AttackerController->PlayerState == nullptr) return;
+	if(VictimController == nullptr || VictimController->PlayerState == nullptr) return;
 	AShooterPlayerState* AttackerPlayerState = AttackerController ? Cast<AShooterPlayerState>(AttackerController->PlayerState) : nullptr;
 	AShooterPlayerState* VictimPlayerState = VictimController ? Cast<AShooterPlayerState>(VictimController->PlayerState) : nullptr;
-	if(AttackerPlayerState && AttackerPlayerState != VictimPlayerState)
+
+	AShooterGameState* ShooterGameState = GetGameState<AShooterGameState>();
+	
+	if(AttackerPlayerState && AttackerPlayerState != VictimPlayerState && ShooterGameState)
 	{
 		AttackerPlayerState->AddToScore(1.f);
+		ShooterGameState->UpdateTopScore(AttackerPlayerState);
 	}
 	if(VictimPlayerState)
 	{
