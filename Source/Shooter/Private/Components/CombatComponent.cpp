@@ -127,6 +127,8 @@ void UCombatComponent::InitializeCarriedAmmo()
 {
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_AssualtRifle,StartingARAmmo);
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_RocketLauncher,StartingRocketAmmo);
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_Pistol,StatingPistolAmmo);
+
 	
 }
 void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
@@ -156,7 +158,6 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	{
 		HandSocket->AttachActor(EquippedWeapon,Character->GetMesh());
 	}
-	
 	EquippedWeapon->SetOwner(Character);
 	EquippedWeapon->SetHudAmmo();
 	if(CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
