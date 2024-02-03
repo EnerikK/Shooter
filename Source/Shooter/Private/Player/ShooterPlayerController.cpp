@@ -98,6 +98,7 @@ void AShooterPlayerController::ClientJoinMidGame_Implementation(FName StateOfMat
 	CooldownTime = Cooldown;
 	LevelStartingTime = StartingTime;
 	MatchState = StateOfMatch;
+	OnMatchStateSet(MatchState);
 	if(ShooterHUD && MatchState == MatchState::WaitingToStart)
 	{
 		ShooterHUD->AddAnnouncement();
