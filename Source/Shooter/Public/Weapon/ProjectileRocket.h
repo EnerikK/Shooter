@@ -34,7 +34,5 @@ protected:
 	USoundAttenuation* LoopingSoundAttenuation;
 	
 private:
-
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* RocketMesh;
+	
 };

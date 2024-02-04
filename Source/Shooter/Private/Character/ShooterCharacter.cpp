@@ -115,6 +115,11 @@ void AShooterCharacter::MulticastElim_Implementation()
 	//Disable Collision
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	if(IsLocallyControlled() && Combat && Combat->bAiming && Combat->EquippedWeapon && Combat->EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Sniper)
+	{
+		ShowSniperScopeWidget(false);
+	}
 	
 }
 void AShooterCharacter::UpdateDissolveMaterial(float DissolveValue)
@@ -304,13 +309,19 @@ void AShooterCharacter::PlayReloadMontage()
 			SectionName = FName("Rifle");
 			break;
 		case EWeaponType::EWT_Pistol:
-			SectionName = FName("Rifle");
+			SectionName = FName("Pistol");
 			break;
 		case EWeaponType::EWT_SMG:
-			SectionName = FName("Rifle");
+			SectionName = FName("Pistol");
 			break;
 		case EWeaponType::EWT_Shotgun:
-			SectionName = FName("Rifle");
+			SectionName = FName("Shotgun");
+			break;
+		case EWeaponType::EWT_Sniper:
+			SectionName = FName("Sniper");
+			break;
+		case EWeaponType::EWT_GrenadeLauncher:
+			SectionName = FName("Grenade");
 			break;
 		}
 		AnimInstance->Montage_JumpToSection(SectionName);

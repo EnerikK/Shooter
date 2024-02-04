@@ -130,8 +130,8 @@ void UCombatComponent::InitializeCarriedAmmo()
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_Pistol,StatingPistolAmmo);
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_SMG,StartingSMGAmmo);
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_Shotgun,StartingShotgunAmmo);
-
-	
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_Sniper,StartingSniperAmmo);
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_GrenadeLauncher,StartingGrenadeLauncherAmmo);
 }
 void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
 {
@@ -405,11 +405,16 @@ void UCombatComponent::InterpPov(float DeltaTime)
 }
 void UCombatComponent::SetAiming(bool bIsAiming)
 {
+	if(Character == nullptr || EquippedWeapon == nullptr) return;
 	bAiming = bIsAiming;
 	ServerSetAiming(bIsAiming);
 	if(Character)
 	{
 		Character->GetCharacterMovement()->MaxWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed;
+	}
+	if(Character->IsLocallyControlled() && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Sniper)
+	{
+		Character->ShowSniperScopeWidget(bIsAiming);
 	}
 }
 void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)

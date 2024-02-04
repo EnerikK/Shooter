@@ -28,6 +28,7 @@ AProjectile::AProjectile()
 	
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>("ProjectileMovementComponent");
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
+	ProjectileMovementComponent->SetIsReplicated(true);
 	
 }
 void AProjectile::BeginPlay()
@@ -70,10 +71,39 @@ void AProjectile::Destroyed()
 	}
 }
 
+void AProjectile::StartDestroyTimer()
+{
+	GetWorldTimerManager().SetTimer(
+		DestroyTimer,
+		this,
+		&AProjectile::DestroyTimerFinished,
+		DestroyTime
+	);
+	
+}
+void AProjectile::DestroyTimerFinished()
+{
+	Destroy();
+}
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
                         FVector NormalImpulse, const FHitResult& Hit)
 {
 	Destroy();
+}
+void AProjectile::ExplodeDamage()
+{
+	APawn* FiringPawn = GetInstigator();
+	if(FiringPawn && HasAuthority())
+	{
+		AController* FiringController = FiringPawn->GetController();
+		if(FiringController)
+		{
+			UGameplayStatics::ApplyRadialDamageWithFalloff(this,
+				Damage,10.f,GetActorLocation(),DamageInnerRadius,DamageOuterRadius,
+				1.f,UDamageType::StaticClass(),TArray<AActor*>(),this,FiringController);
+		}
+	}
+	
 }
 
 
