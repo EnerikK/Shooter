@@ -48,6 +48,10 @@ AShooterCharacter::AShooterCharacter()
 	TurningInPlace = ETurnInPlace::ETurnIP_NotTurning;
 
 	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimeLineComponent"));
+
+	AttachedGrenade = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("AttachedGrenade"));
+	AttachedGrenade->SetupAttachment(GetMesh(),FName("Grenade_Socket"));
+	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	
 }
 void AShooterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -66,6 +70,10 @@ void AShooterCharacter::BeginPlay()
 	if(HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this,&AShooterCharacter::ReceiveDamage);
+	}
+	if(AttachedGrenade)
+	{
+		AttachedGrenade->SetVisibility(false);
 	}
 }
 void AShooterCharacter::UpdateHudHealth()
@@ -227,6 +235,7 @@ void AShooterCharacter::AimOffset(float DeltaTime)
 void AShooterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
 	AController* InstigatorController, AActor* DamageCauser)
 {
+	if(bIsElimmed) return;
 	Health = FMath::Clamp(Health - Damage,0.f,MaxHealth);
 	UpdateHudHealth();
 	PlayHitReactMontage();
@@ -350,6 +359,18 @@ void AShooterCharacter::PlayHitReactMontage()
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
+void AShooterCharacter::PlayThrowGrenadeMontage()
+{
+	if(Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if(AnimInstance && GrenadeToss)
+	{
+		AnimInstance->Montage_Play(GrenadeToss);
+		FName SectionName("FrontHit");
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
 void AShooterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
 	if(OverlappingWeapon)
@@ -440,6 +461,14 @@ void AShooterCharacter::ReloadButtonPressed()
 		Combat->Reload();
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Reloading!"));	
 
+	}
+}
+void AShooterCharacter::GrenadeButtonPressed()
+{
+	if(Combat)
+	{
+		Combat->ThrowGrenade();
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("LEEEEEROYYYYYYY!"));	
 	}
 }
 void AShooterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)

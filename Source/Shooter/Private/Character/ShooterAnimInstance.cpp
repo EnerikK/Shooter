@@ -78,7 +78,7 @@ void UShooterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 			DrawDebugLine(GetWorld(),MuzzleTipTransform.GetLocation(),Character->GetHitTarget(),FColor::Blue);
 		}
 	}
-	bUseFabrik = Character->GetCombatState() != ECombatState::ECState_Reloading;
-	bUseAimOffSets = Character->GetCombatState() != ECombatState::ECState_Reloading;
-	bTransformRightHand = Character->GetCombatState() != ECombatState::ECState_Reloading;
+	bUseFabrik = Character->GetCombatState() == ECombatState::ECState_Unoccupied;
+	bUseAimOffSets = Character->GetCombatState() == ECombatState::ECState_Unoccupied;
+	bTransformRightHand = Character->GetCombatState() == ECombatState::ECState_Unoccupied;
 }

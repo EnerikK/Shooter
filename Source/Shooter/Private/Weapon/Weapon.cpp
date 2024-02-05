@@ -6,11 +6,13 @@
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Animation/AnimationAsset.h"
+#include "Components/CombatComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Player/ShooterPlayerController.h"
 #include "Weapon/AmmoEject.h"
+#include "Weapon/WeaponTypes.h"
 #include "Weapon/Projectile.h"
 
 
@@ -27,6 +29,10 @@ AWeapon::AWeapon()
 	WeaponMesh->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	WeaponMesh->SetCustomDepthStencilValue(250);
+	WeaponMesh->MarkRenderStateDirty();
+	EnableCustomDepth(true);
+
 	PickUpSphere = CreateDefaultSubobject<USphereComponent>(TEXT("PickUpSphere"));
 	PickUpSphere->SetupAttachment(RootComponent);
 	PickUpSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
@@ -35,6 +41,14 @@ AWeapon::AWeapon()
 	PickUpWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PickUpWidget"));
 	PickUpWidget->SetupAttachment(RootComponent);
 	
+}
+
+void AWeapon::EnableCustomDepth(bool bEnable)
+{
+	if(WeaponMesh)
+	{
+		WeaponMesh->SetRenderCustomDepth(bEnable);
+	}
 }
 
 void AWeapon::BeginPlay()
@@ -118,6 +132,7 @@ void AWeapon::SetWeaponState(EWeaponState State)
 			WeaponMesh->SetEnableGravity(true);
 			WeaponMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 		}
+		EnableCustomDepth(false);
 		break;
 	case EWeaponState::EW_Dropped:
 		if(HasAuthority())
@@ -130,13 +145,20 @@ void AWeapon::SetWeaponState(EWeaponState State)
 		WeaponMesh->SetCollisionResponseToAllChannels(ECR_Block);
 		WeaponMesh->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
 		WeaponMesh->SetCollisionResponseToChannel(ECC_Camera,ECR_Ignore);
-
+		
+		WeaponMesh->SetCustomDepthStencilValue(251);
+		WeaponMesh->MarkRenderStateDirty();
+		EnableCustomDepth(true);
 		break;
 	}
 }
 bool AWeapon::IsEmpty()
 {
 	return Ammo <= 0;
+}
+bool AWeapon::IsFull()
+{
+	return Ammo == MagCapacity;
 }
 void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
                               UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -189,6 +211,11 @@ void AWeapon::OnRep_WeaponState()
 }
 void AWeapon::OnRep_Ammo()
 {
+	ShooterOwnerCharacter = ShooterOwnerCharacter == nullptr ? Cast<AShooterCharacter>(GetOwner()) : ShooterOwnerCharacter;
+	if(ShooterOwnerCharacter && ShooterOwnerCharacter->GetCombat() && IsFull())
+	{
+		ShooterOwnerCharacter->GetCombat()->JumpToShotgunEnd();
+	}
 	SetHudAmmo();
 }
 void AWeapon::OnRep_Owner()

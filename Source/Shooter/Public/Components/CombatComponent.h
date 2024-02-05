@@ -12,6 +12,7 @@
 
 #define TRACE 80000.f
 
+class AProjectile;
 class AShooterHUD;
 class AWeapon;
 class AShooterPlayerController;
@@ -36,6 +37,23 @@ public:
 	void FinishReloading();
 	
 	void FireButtonPressed(bool bPressed);
+
+	UFUNCTION(BlueprintCallable)
+	void ShotgunShellReload();
+
+	void JumpToShotgunEnd();
+
+	UFUNCTION(BlueprintCallable)
+	void ThrowGrenadeFinish();
+
+	UFUNCTION(BlueprintCallable)
+	void LaunchGrenade();
+
+	UFUNCTION(Server,Reliable)
+	void ServerLaunchGrenade(const FVector_NetQuantize& Target);
+
+	FORCEINLINE int32 GetGrenades() const {return Grenades;}
+	
 protected:
 
 	virtual void BeginPlay() override;
@@ -47,9 +65,7 @@ protected:
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
 	void Fire();
-
 	
-
 	UFUNCTION(Server, Reliable)
 	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
 
@@ -66,6 +82,22 @@ protected:
 	void HandleReload();
 	
 	int32 AmountToReload();
+
+	void ThrowGrenade();
+
+	UFUNCTION(Server,Reliable)
+	void ServerThrowGrenade();
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AProjectile> GrenadeClass;
+
+	void DropEquippedWeapon();
+	void AttachActorToRightHand(AActor* ActorToAttach);
+	void AttachActorToLeftHand(AActor* ActorToAttach);
+	void UpdateCarriedAmmo();
+	void PlayEquippedSound();
+	void ReloadEmptyWeapon();
+	void ShowAttachedGrenade(bool bShowGrenade);
 	
 private:
 	
@@ -135,9 +167,9 @@ private:
 
 	UFUNCTION()
 	void OnRep_CarriedAmmo();
-
 	
 	TMap<EWeaponType,int32> CarriedAmmoMap; //TODO : Understand how tmaps and hash functions work better
+	
 	UPROPERTY(EditAnywhere)
 	int32 StartingARAmmo = 30;
 
@@ -168,5 +200,17 @@ private:
 	void OnRep_CombatState();
 
 	void UpdateAmmoValues();
+	void UpdateShotgunAmmoValues();
+
+	UPROPERTY(ReplicatedUsing = OnRep_Grenades)
+	int32 Grenades = 3;
+	
+	UFUNCTION()
+	void OnRep_Grenades();
+	
+	UPROPERTY(EditAnywhere)
+	int32 MaxGrenades = 4;
+
+	void UpdateHudGrenades();
 	
 };

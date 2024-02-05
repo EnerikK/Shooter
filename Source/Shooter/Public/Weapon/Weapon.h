@@ -54,6 +54,7 @@ public:
 	FORCEINLINE int32 GetAmmo() const {return Ammo;}
 	FORCEINLINE int32 GetMagCapacity() const {return MagCapacity;}
 	bool IsEmpty();
+	bool IsFull();
 
 	/*
 	 * AutoFire rifle basically hold fire 
@@ -88,6 +89,11 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	USoundCue* EquipSound;
+
+	/*
+	 * CustomDepth
+	 */
+	void EnableCustomDepth(bool bEnable);
 	
 protected:
 	

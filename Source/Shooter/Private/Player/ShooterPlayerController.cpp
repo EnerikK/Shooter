@@ -74,6 +74,11 @@ void AShooterPlayerController::PollInit()
 				SetHudHealth(HudHealth,HudMaxHealth);
 				SetHudScore(HudScore);
 				SetHudDefeats(HudDefeats);
+				AShooterCharacter* ShooterCharacter = Cast<AShooterCharacter>(GetPawn());
+				if(ShooterCharacter && ShooterCharacter->GetCombat())
+				{
+					SetHudGrenades(ShooterCharacter->GetCombat()->GetGrenades());                        
+				}
 			}
 		}
 	}
@@ -222,6 +227,22 @@ void AShooterPlayerController::SetHudAnnouncementCountdown(float CountdownTime)
 		
 		FString CountdownText = FString::Printf(TEXT("%02d:%02d"),Minutes,Seconds);
 		ShooterHUD->Announcement->InterventionTime->SetText(FText::FromString(CountdownText));
+	}
+	
+}
+void AShooterPlayerController::SetHudGrenades(int32 Grenades)
+{
+	ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
+	bool bHudValid = ShooterHUD && ShooterHUD->HudOverlay && ShooterHUD->HudOverlay->GrenadesText;
+	if(bHudValid)
+	{
+		FString GrenadesText = FString::Printf(TEXT("%d"),Grenades); 
+		ShooterHUD->HudOverlay->GrenadesText->SetText(FText::FromString(GrenadesText));
+		
+	}
+	else
+	{
+		HudGrenades = Grenades;
 	}
 	
 }
@@ -401,6 +422,9 @@ void AShooterPlayerController::SetupInputComponent()
 
 	EnhancedInputComponent->BindAction(
 	ReloadAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Reload);
+
+	EnhancedInputComponent->BindAction(
+	GrenadeToss,ETriggerEvent::Triggered,this,&AShooterPlayerController::Toss);
 	
 }
 void AShooterPlayerController::Move(const FInputActionValue& Value)
@@ -531,5 +555,16 @@ void AShooterPlayerController::Reload(const FInputActionValue& Value)
 		ControlledCharacter->ReloadButtonPressed();
 	}
 	
+}
+
+void AShooterPlayerController::Toss(const FInputActionValue& Value)
+{
+	if(bDisableGameplay) return;
+
+	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
+	if(ControlledCharacter)
+	{
+		ControlledCharacter->GrenadeButtonPressed();
+	}
 }
 	

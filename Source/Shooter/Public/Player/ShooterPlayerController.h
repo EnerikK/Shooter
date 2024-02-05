@@ -39,6 +39,7 @@ public:
 	void SetHudCarriedAmmo(int32 Ammo);
 	void SetHudMatchCountdown(float CountdownTime);
 	void SetHudAnnouncementCountdown(float CountdownTime);
+	void SetHudGrenades(int32 Grenades);
 
 	virtual float GetServerTime(); //Sync with server world clock
 	virtual void ReceivedPlayer() override; //Sync With server clock as soon as possilbe
@@ -117,6 +118,7 @@ private:
 	float HudMaxHealth;
 	float HudScore;
 	int32 HudDefeats;
+	int32 HudGrenades;
 	
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputMappingContext> PlayerContext;
@@ -148,6 +150,9 @@ private:
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> ReloadAction;
 
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> GrenadeToss;
+
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void Jump(const FInputActionValue& Value);
@@ -157,6 +162,7 @@ private:
 	void ReleaseAim(const FInputActionValue& Value);
 	void Fire(const FInputActionValue& Value);
 	void Reload(const FInputActionValue& Value);
+	void Toss(const FInputActionValue& Value);
 
 };
 

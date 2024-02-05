@@ -3,6 +3,11 @@
 #pragma once
 
 #define TRACE 80000.f
+#define CUSTOM_DEPTH_PURPLE 250;
+#define Custom_Depth_Blue   251;
+#define Custom_Depth_Tan    252;
+#define Custom_Depth_Red    255;
+
 
 UENUM(BlueprintType)
 enum class EWeaponType : uint8

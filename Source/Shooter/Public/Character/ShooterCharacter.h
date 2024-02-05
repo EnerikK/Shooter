@@ -34,6 +34,7 @@ public:
 	void PlayReloadMontage();
 	void PlayElimMontage();
 	void PlayHitReactMontage();
+	void PlayThrowGrenadeMontage();
 	void UpdateHudHealth();
 
 	void Elim();
@@ -48,6 +49,7 @@ public:
 	void FireButtonPressed();
 	void FireButtonReleased();
 	void ReloadButtonPressed();
+	void GrenadeButtonPressed();
 	
 	void SetOverlappingWeapon(AWeapon* Weapon);
 	bool IsWeaponEquipped();
@@ -65,6 +67,8 @@ public:
 	FORCEINLINE float GetHealth() const {return Health;}
 	FORCEINLINE float GetMaxHealth() const {return MaxHealth;}
 	FORCEINLINE UCombatComponent* GetCombat() const {return Combat;}
+	FORCEINLINE UAnimMontage* GetReloadMontage() const {return ReloadMontage;}
+	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const {return AttachedGrenade;}
 	ECombatState GetCombatState() const;
 
 
@@ -126,6 +130,9 @@ private:
 
 	UPROPERTY(EditAnywhere , Category= "Combat")
 	UAnimMontage* ReloadMontage;
+
+	UPROPERTY(EditAnywhere , Category= "Combat")
+	UAnimMontage* GrenadeToss;
 	
 	void HideCamera();
 	
@@ -175,4 +182,8 @@ private:
 
 	UPROPERTY(EditDefaultsOnly)
 	float ElimDelay = 3.f;
+
+	/*Grenade*/
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* AttachedGrenade;
 };
