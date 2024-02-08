@@ -30,6 +30,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	FORCEINLINE int32 GetGrenades() const {return Grenades;}
 
 	void EquipWeapon(AWeapon* WeaponToEquip);
 	void Reload();
@@ -52,8 +53,7 @@ public:
 	UFUNCTION(Server,Reliable)
 	void ServerLaunchGrenade(const FVector_NetQuantize& Target);
 
-	FORCEINLINE int32 GetGrenades() const {return Grenades;}
-	
+	void PickUpAmmo(EWeaponType WeaponType, int32 AmmoAmount);
 protected:
 
 	virtual void BeginPlay() override;
@@ -100,11 +100,12 @@ protected:
 	void ShowAttachedGrenade(bool bShowGrenade);
 	
 private:
-	
+
+	UPROPERTY()
 	AShooterCharacter* Character;
-
+	UPROPERTY()
 	AShooterPlayerController* Controller;
-
+	UPROPERTY()
 	AShooterHUD* Hud;
 	
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
@@ -169,6 +170,9 @@ private:
 	void OnRep_CarriedAmmo();
 	
 	TMap<EWeaponType,int32> CarriedAmmoMap; //TODO : Understand how tmaps and hash functions work better
+
+	UPROPERTY(EditAnywhere)
+	int32 MaxCarriedAmmo = 90;
 	
 	UPROPERTY(EditAnywhere)
 	int32 StartingARAmmo = 30;

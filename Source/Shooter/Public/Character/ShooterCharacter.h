@@ -10,6 +10,7 @@
 #include "Shooter/Types/CombatState.h"
 #include "ShooterCharacter.generated.h"
 
+class UBuffComponent;
 class AShooterPlayerState;
 class AShooterPlayerController;
 class UCombatComponent;
@@ -65,8 +66,10 @@ public:
 	FORCEINLINE UCameraComponent* GetFollowCamera() const {return FollowCamera;}
 	FORCEINLINE bool IsElimmed() const {return bIsElimmed;}
 	FORCEINLINE float GetHealth() const {return Health;}
+	FORCEINLINE void SetHealth(float Amount) {Health = Amount;}
 	FORCEINLINE float GetMaxHealth() const {return MaxHealth;}
 	FORCEINLINE UCombatComponent* GetCombat() const {return Combat;}
+	FORCEINLINE UBuffComponent* GetBuff() const {return Buff;}
 	FORCEINLINE UAnimMontage* GetReloadMontage() const {return ReloadMontage;}
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const {return AttachedGrenade;}
 	ECombatState GetCombatState() const;
@@ -98,6 +101,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = true))
 	UCombatComponent* Combat;
+
+	UPROPERTY(VisibleAnywhere)
+	UBuffComponent* Buff;
 	
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
 	AWeapon* OverlappingWeapon;
@@ -151,7 +157,7 @@ private:
 	bool bIsElimmed = false;
 
 	UFUNCTION()
-	void OnRep_Health();
+	void OnRep_Health(float LastHealth);
 	
 	//Dissolve Effect  TODO ::  there's a bug(Feature) that only dissolve on of the 2 materials that the Character Has Fix it at some point 
 

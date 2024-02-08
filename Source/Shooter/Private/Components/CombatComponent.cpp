@@ -69,6 +69,18 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	/*FHitResult HitResult;
 	TraceUnderCrosshair(HitResult);*/
 }
+void UCombatComponent::PickUpAmmo(EWeaponType WeaponType, int32 AmmoAmount)
+{
+	if(CarriedAmmoMap.Contains(WeaponType))
+	{
+		CarriedAmmoMap[WeaponType] = FMath::Clamp(CarriedAmmoMap[WeaponType] + AmmoAmount , 0 ,MaxCarriedAmmo);
+		UpdateCarriedAmmo();
+	}
+	if(EquippedWeapon && EquippedWeapon->IsEmpty() && EquippedWeapon->GetWeaponType() == WeaponType)
+	{
+		Reload();
+	}
+}
 void UCombatComponent::FireButtonPressed(bool bPressed)
 {
 	bFireButtonPressed = bPressed;

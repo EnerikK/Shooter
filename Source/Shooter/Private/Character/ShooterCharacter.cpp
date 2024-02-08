@@ -2,6 +2,7 @@
 
 #include "Shooter/Public/Character/ShooterCharacter.h"
 #include "Camera/CameraComponent.h"
+#include "Components/BuffComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/CombatComponent.h"
 #include "Game/ShooterGameModeBase.h"
@@ -38,6 +39,9 @@ AShooterCharacter::AShooterCharacter()
 
 	Combat = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	Combat->SetIsReplicated(true);
+
+	Buff = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
+	Buff->SetIsReplicated(true);
 
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera,ECR_Ignore);
@@ -269,6 +273,11 @@ void AShooterCharacter::PostInitializeComponents()
 	if(Combat)
 	{
 		Combat->Character = this;
+	}
+	if(Buff)
+	{
+		Buff->Character = this;
+		Buff->SetInitialSpeed(GetCharacterMovement()->MaxWalkSpeed,GetCharacterMovement()->MaxWalkSpeedCrouched);
 	}
 	
 }
@@ -524,10 +533,14 @@ void AShooterCharacter::HideCamera()
 		}
 	}
 }
-void AShooterCharacter::OnRep_Health()
+void AShooterCharacter::OnRep_Health(float LastHealth)
 {
-	PlayHitReactMontage();
 	UpdateHudHealth();
+	if(Health < LastHealth)
+	{
+		PlayHitReactMontage();
+	}
+	
 }
 void AShooterCharacter::ServerEquipButtonPressed_Implementation()
 {
