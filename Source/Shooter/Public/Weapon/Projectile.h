@@ -39,7 +39,7 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* ImpactParticles;
-
+	
 	UPROPERTY(EditAnywhere)
 	USoundCue* ImpactSound;
 

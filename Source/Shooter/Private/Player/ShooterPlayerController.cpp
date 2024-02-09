@@ -71,13 +71,16 @@ void AShooterPlayerController::PollInit()
 			HudOverlay = ShooterHUD->HudOverlay;
 			if(HudOverlay)
 			{
-				SetHudHealth(HudHealth,HudMaxHealth);
-				SetHudScore(HudScore);
-				SetHudDefeats(HudDefeats);
+				if(bInitializeHealth) SetHudHealth(HudHealth,HudMaxHealth);
+				if(bInitializeShield) SetHudShield(HudShield,HudMaxShield);
+				if(bInitializeScore)  SetHudScore(HudScore);
+				if(bInitializeDefeats)SetHudDefeats(HudDefeats);
+				if(bInitializeCarriedAmmo) SetHudCarriedAmmo(HudCarriedAmmo);
+				if(bInitializeWeaponAmmo) SetHudWeaponAmmo(HudWeaponAmmo);
 				AShooterCharacter* ShooterCharacter = Cast<AShooterCharacter>(GetPawn());
 				if(ShooterCharacter && ShooterCharacter->GetCombat())
 				{
-					SetHudGrenades(ShooterCharacter->GetCombat()->GetGrenades());                        
+					if(bInitializeGrenades) SetHudGrenades(ShooterCharacter->GetCombat()->GetGrenades());                        
 				}
 			}
 		}
@@ -132,11 +135,28 @@ void AShooterPlayerController::SetHudHealth(float Health, float MaxHealth)
 	}
 	else
 	{
-		bInitializeHudOverlay = true;
+		bInitializeHealth = true;
 		HudHealth = Health;
 		HudMaxHealth = MaxHealth;
 	}
-	
+}
+void AShooterPlayerController::SetHudShield(float Shield, float MaxShield)
+{
+	ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
+	bool bHudValid = ShooterHUD && ShooterHUD->HudOverlay && ShooterHUD->HudOverlay->ShieldBar && ShooterHUD->HudOverlay->ShieldText;
+	if(bHudValid)
+	{
+		const float ShieldPercent = Shield/MaxShield;
+		ShooterHUD->HudOverlay->ShieldBar->SetPercent(ShieldPercent);
+		FString ShieldText = FString::Printf(TEXT("%d/%d"),FMath::CeilToInt(Shield),FMath::CeilToInt(MaxShield));
+		ShooterHUD->HudOverlay->ShieldText->SetText(FText::FromString(ShieldText));
+	}
+	else
+	{
+		bInitializeShield = true;
+		HudShield = Shield;
+		HudMaxShield = MaxShield;
+	}
 }
 void AShooterPlayerController::SetHudScore(float Score)
 {
@@ -149,7 +169,7 @@ void AShooterPlayerController::SetHudScore(float Score)
 	}
 	else
 	{
-		bInitializeHudOverlay = true;
+		bInitializeScore = true;
 		HudScore = Score;
 	}
 }
@@ -165,7 +185,7 @@ void AShooterPlayerController::SetHudDefeats(int32 Defeats)
 	}
 	else
 	{
-		bInitializeHudOverlay = true;
+		bInitializeDefeats = true;
 		HudDefeats = Defeats;
 	}
 }
@@ -179,6 +199,10 @@ void AShooterPlayerController::SetHudWeaponAmmo(int32 Ammo)
 		ShooterHUD->HudOverlay->WeaponAmmoAmount->SetText(FText::FromString(AmmoText));
 		
 	}
+	else
+	{
+		bInitializeWeaponAmmo = true;
+	}
 	
 }
 void AShooterPlayerController::SetHudCarriedAmmo(int32 Ammo)
@@ -190,6 +214,11 @@ void AShooterPlayerController::SetHudCarriedAmmo(int32 Ammo)
 		FString AmmoText = FString::Printf(TEXT("%d"),Ammo);
 		ShooterHUD->HudOverlay->CarriedAmmo->SetText(FText::FromString(AmmoText));
 		
+	}
+	else
+	{
+		bInitializeCarriedAmmo = true;
+		HudCarriedAmmo = Ammo;
 	}
 }
 void AShooterPlayerController::SetHudMatchCountdown(float CountdownTime)
@@ -242,6 +271,7 @@ void AShooterPlayerController::SetHudGrenades(int32 Grenades)
 	}
 	else
 	{
+		bInitializeGrenades = true;
 		HudGrenades = Grenades;
 	}
 	

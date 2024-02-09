@@ -33,6 +33,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void SetHudHealth(float Health , float MaxHealth);
+	void SetHudShield(float Shield , float MaxShield);
 	void SetHudScore(float Score);
 	void SetHudDefeats(int32 Defeats);
 	void SetHudWeaponAmmo(int32 Ammo);
@@ -116,9 +117,25 @@ private:
 
 	float HudHealth;
 	float HudMaxHealth;
+	bool bInitializeHealth = false;
+	
 	float HudScore;
+	bool bInitializeScore = false;
+	
 	int32 HudDefeats;
+	bool bInitializeDefeats = false;
+	
 	int32 HudGrenades;
+	bool bInitializeGrenades = false;
+
+	float HudShield;
+	float HudMaxShield;
+	bool bInitializeShield = false;
+
+	float HudCarriedAmmo;
+	float HudWeaponAmmo;
+	bool bInitializeCarriedAmmo = false;
+	bool bInitializeWeaponAmmo =false;
 	
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputMappingContext> PlayerContext;

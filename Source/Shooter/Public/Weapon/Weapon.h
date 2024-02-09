@@ -65,6 +65,8 @@ public:
 	UPROPERTY(EditAnywhere,Category="Combat")
 	bool bIsAutomatic = true;
 
+	bool bDestroyWeapon = false;
+
 	/*
 	* Texture for the cross-hairs
 	*/

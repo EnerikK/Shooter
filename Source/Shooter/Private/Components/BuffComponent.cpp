@@ -21,6 +21,7 @@ void UBuffComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	
 	HealRampUp(DeltaTime);
+	ShieldRampUp(DeltaTime);
 
 }
 void UBuffComponent::Heal(float HealAmount, float HealTime)
@@ -28,6 +29,12 @@ void UBuffComponent::Heal(float HealAmount, float HealTime)
 	bHealing = true;
 	HealingRate = HealAmount / HealTime;
 	AmountToHeal += HealAmount;
+}
+void UBuffComponent::ReplenishShield(float ShieldAmount, float ReplenishTime)
+{
+	bReplenishShield = true;
+	ShieldReplenishRate = ShieldAmount / ReplenishTime;
+	ShieldAmountToReplenish += ShieldAmount;
 }
 void UBuffComponent::HealRampUp(float DeltaTime)
 {
@@ -44,10 +51,29 @@ void UBuffComponent::HealRampUp(float DeltaTime)
 		AmountToHeal = 0.f;
 	}
 }
+void UBuffComponent::ShieldRampUp(float DeltaTime)
+{
+	if(!bReplenishShield || Character == nullptr || Character->IsElimmed()) return;
+	
+	const float ReplenishThisFrame = ShieldReplenishRate * DeltaTime;
+	Character->SetShield(FMath::Clamp(Character->GetShield() + ReplenishThisFrame,0.f,Character->GetMaxShield()));
+	Character->UpdateHudShield();
+	ShieldAmountToReplenish -= ReplenishThisFrame;
+
+	if(ShieldAmountToReplenish <= 0.f || Character->GetShield() >= Character->GetMaxShield())
+	{
+		bReplenishShield = false;
+		ShieldAmountToReplenish = 0.f;
+	}
+}
 void UBuffComponent::SetInitialSpeed(float BaseSpeed, float BaseCrouchSpeed)
 {
 	InitialSpeed = BaseSpeed;
 	InitialCrouchSpeed = BaseCrouchSpeed;
+}
+void UBuffComponent::SetInitialJumpVelocity(float Velocity)
+{
+	InitialJumpVelocity = Velocity;
 }
 void UBuffComponent::BuffSpeed(float BuffBaseSpeed, float BuffCrouchSpeed, float BuffTime)
 {
@@ -70,8 +96,36 @@ void UBuffComponent::ResetSpeed()
 }
 void UBuffComponent::MulticastSpeedBuff_Implementation(float BaseSpeed, float CrouchSpeed)
 {
-	Character->GetCharacterMovement()->MaxWalkSpeed = BaseSpeed;
-	Character->GetCharacterMovement()->MaxWalkSpeedCrouched = CrouchSpeed;
+	if(Character && Character->GetCharacterMovement())
+	{	
+		Character->GetCharacterMovement()->MaxWalkSpeed = BaseSpeed;
+		Character->GetCharacterMovement()->MaxWalkSpeedCrouched = CrouchSpeed;
+	}
+}
+void UBuffComponent::ResetJump()
+{
+	if(Character->GetCharacterMovement())
+	{
+		Character->GetCharacterMovement()->JumpZVelocity = InitialJumpVelocity;
+	}
+	MulticastJumpBuff(InitialJumpVelocity);
+}
+void UBuffComponent::BuffJump(float BuffJumpVelocity, float BuffDuration)
+{
+	if(Character == nullptr) return;
+	Character->GetWorldTimerManager().SetTimer(JumpBuffTimer,this,&UBuffComponent::ResetJump,BuffDuration);
+	if(Character->GetCharacterMovement())
+	{
+		Character->GetCharacterMovement()->JumpZVelocity = BuffJumpVelocity;
+	}
+	MulticastJumpBuff(BuffJumpVelocity);
+}
+void UBuffComponent::MulticastJumpBuff_Implementation(float JumpVelocity)
+{
+	if(Character && Character->GetCharacterMovement())
+	{
+		Character->GetCharacterMovement()->JumpZVelocity = JumpVelocity;
+	}
 }
 
 

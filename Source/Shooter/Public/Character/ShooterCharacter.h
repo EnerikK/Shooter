@@ -36,8 +36,11 @@ public:
 	void PlayElimMontage();
 	void PlayHitReactMontage();
 	void PlayThrowGrenadeMontage();
+	
 	void UpdateHudHealth();
-
+	void UpdateHudShield();
+	void UpdateHudAmmo();
+	
 	void Elim();
 	UFUNCTION(NetMulticast,Reliable)
 	void MulticastElim();
@@ -57,17 +60,21 @@ public:
 	bool IsAiming();
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowSniperScopeWidget(bool bShowScope);
+	void SpawnDefaultWeapon();
 	
 	FORCEINLINE float GetAO_Yaw() const {return AO_Yaw;}
 	FORCEINLINE float GetAO_Pitch() const {return  AO_Pitch;}
-	AWeapon* GetEquippedWeapon();
 	FORCEINLINE ETurnInPlace GetTurningInPlace() const {return TurningInPlace;}
+	AWeapon* GetEquippedWeapon();
 	FVector GetHitTarget() const;
 	FORCEINLINE UCameraComponent* GetFollowCamera() const {return FollowCamera;}
 	FORCEINLINE bool IsElimmed() const {return bIsElimmed;}
 	FORCEINLINE float GetHealth() const {return Health;}
 	FORCEINLINE void SetHealth(float Amount) {Health = Amount;}
 	FORCEINLINE float GetMaxHealth() const {return MaxHealth;}
+	FORCEINLINE float GetShield() const {return Shield;}
+	FORCEINLINE void SetShield(float Amount) {Shield = Amount;}
+	FORCEINLINE float GetMaxShield() const {return MaxShield;}
 	FORCEINLINE UCombatComponent* GetCombat() const {return Combat;}
 	FORCEINLINE UBuffComponent* GetBuff() const {return Buff;}
 	FORCEINLINE UAnimMontage* GetReloadMontage() const {return ReloadMontage;}
@@ -84,6 +91,7 @@ protected:
 	void ReceiveDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,AController* InstigatorController,AActor* DamageCauser);
 	//Poll for any relevant classes and initialiaze the class
 	void PollInit();
+
 
 private:
 
@@ -148,6 +156,7 @@ private:
 	/*
 	 * PlayerStats
 	 */
+	/*Player Health*/
 	UPROPERTY(EditAnywhere,Category="Player Stats")
 	float MaxHealth = 100;
 
@@ -158,6 +167,16 @@ private:
 
 	UFUNCTION()
 	void OnRep_Health(float LastHealth);
+	
+	/*Player Shield*/
+	UPROPERTY(EditAnywhere,Category="Player Stats")
+	float MaxShield = 100.f;
+
+	UPROPERTY(ReplicatedUsing=OnRep_Shield,EditAnywhere,Category="Player Stats")
+	float Shield = 0.f;
+
+	UFUNCTION()
+	void OnRep_Shield(float LastShield);
 	
 	//Dissolve Effect  TODO ::  there's a bug(Feature) that only dissolve on of the 2 materials that the Character Has Fix it at some point 
 
@@ -192,4 +211,9 @@ private:
 	/*Grenade*/
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* AttachedGrenade;
+
+	/*DefaultWeapon*/
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWeapon> DefaultWeaponClass;
 };

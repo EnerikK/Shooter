@@ -64,13 +64,15 @@ void AShooterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	
 	DOREPLIFETIME_CONDITION(AShooterCharacter,OverlappingWeapon,COND_OwnerOnly);
 	DOREPLIFETIME(AShooterCharacter,Health);
-
-	
+	DOREPLIFETIME(AShooterCharacter,Shield);
 }
 void AShooterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	SpawnDefaultWeapon();
+	UpdateHudAmmo();
 	UpdateHudHealth();
+	UpdateHudShield();
 	if(HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this,&AShooterCharacter::ReceiveDamage);
@@ -88,11 +90,35 @@ void AShooterCharacter::UpdateHudHealth()
 		ShooterPlayerController->SetHudHealth(Health,MaxHealth);
 	}
 }
+void AShooterCharacter::UpdateHudShield()
+{
+	ShooterPlayerController = ShooterPlayerController == nullptr ?  Cast<AShooterPlayerController>(Controller) : ShooterPlayerController;
+	if(ShooterPlayerController)
+	{
+		ShooterPlayerController->SetHudShield(Shield,MaxShield);
+	}
+}
+void AShooterCharacter::UpdateHudAmmo()
+{
+	ShooterPlayerController = ShooterPlayerController == nullptr ?  Cast<AShooterPlayerController>(Controller) : ShooterPlayerController;
+	if(ShooterPlayerController && Combat && Combat->EquippedWeapon)
+	{
+		ShooterPlayerController->SetHudCarriedAmmo(Combat->CarriedAmmo);
+		ShooterPlayerController->SetHudWeaponAmmo(Combat->EquippedWeapon->GetAmmo());
+	}
+}
 void AShooterCharacter::Elim()
 {
 	if(Combat && Combat->EquippedWeapon)
 	{
-		Combat->EquippedWeapon->Dropped();
+		if(Combat->EquippedWeapon->bDestroyWeapon)
+		{
+			Combat->EquippedWeapon->Destroy();
+		}
+		else
+		{
+			Combat->EquippedWeapon->Dropped();
+		}
 	}
 	MulticastElim();
 	GetWorldTimerManager().SetTimer(ElimTimer,this,&AShooterCharacter::ElimTimerFinished,ElimDelay);
@@ -240,8 +266,24 @@ void AShooterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const 
 	AController* InstigatorController, AActor* DamageCauser)
 {
 	if(bIsElimmed) return;
-	Health = FMath::Clamp(Health - Damage,0.f,MaxHealth);
+
+	float DamageToHealth = Damage;
+	if(Shield > 0)
+	{
+		if(Shield >= Damage)
+		{
+			Shield = FMath::Clamp(Shield - Damage,0.f,MaxShield);
+			DamageToHealth = 0.f;
+		}
+		else
+		{
+			Shield = 0.f;
+			DamageToHealth = FMath::Clamp(DamageToHealth - Shield,0.f,Damage);
+		}
+	}
+	Health = FMath::Clamp(Health - DamageToHealth,0.f,MaxHealth);
 	UpdateHudHealth();
+	UpdateHudShield();
 	PlayHitReactMontage();
 
 	if(Health  == 0.f)
@@ -278,6 +320,7 @@ void AShooterCharacter::PostInitializeComponents()
 	{
 		Buff->Character = this;
 		Buff->SetInitialSpeed(GetCharacterMovement()->MaxWalkSpeed,GetCharacterMovement()->MaxWalkSpeedCrouched);
+		Buff->SetInitialJumpVelocity(GetCharacterMovement()->JumpZVelocity);
 	}
 	
 }
@@ -402,6 +445,20 @@ bool AShooterCharacter::IsWeaponEquipped()
 bool AShooterCharacter::IsAiming()
 {
 	return (Combat && Combat->bAiming);
+}
+void AShooterCharacter::SpawnDefaultWeapon()
+{
+	AShooterGameModeBase* ShooterGameMode = Cast<AShooterGameModeBase>(UGameplayStatics::GetGameMode(this));
+	UWorld* World = GetWorld();
+	if(ShooterGameMode && World && !bIsElimmed && DefaultWeaponClass)
+	{
+		AWeapon* StartingWeapon = World->SpawnActor<AWeapon>(DefaultWeaponClass);
+		StartingWeapon->bDestroyWeapon = true;
+		if(Combat)
+		{
+			Combat->EquipWeapon(StartingWeapon);
+		}
+	}
 }
 void AShooterCharacter::EquipButtonPressed()
 {
@@ -541,6 +598,14 @@ void AShooterCharacter::OnRep_Health(float LastHealth)
 		PlayHitReactMontage();
 	}
 	
+}
+void AShooterCharacter::OnRep_Shield(float LastShield)
+{
+	UpdateHudShield();
+	if(Shield < LastShield)
+	{
+		PlayHitReactMontage();
+	}
 }
 void AShooterCharacter::ServerEquipButtonPressed_Implementation()
 {
