@@ -91,6 +91,9 @@ protected:
 	void ReceiveDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,AController* InstigatorController,AActor* DamageCauser);
 	//Poll for any relevant classes and initialiaze the class
 	void PollInit();
+	void DropOrDestroyWeapon(AWeapon* Weapon);
+	void DropOrDestroyWeapons();
+	
 
 
 private:

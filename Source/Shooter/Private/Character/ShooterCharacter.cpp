@@ -109,19 +109,35 @@ void AShooterCharacter::UpdateHudAmmo()
 }
 void AShooterCharacter::Elim()
 {
-	if(Combat && Combat->EquippedWeapon)
-	{
-		if(Combat->EquippedWeapon->bDestroyWeapon)
-		{
-			Combat->EquippedWeapon->Destroy();
-		}
-		else
-		{
-			Combat->EquippedWeapon->Dropped();
-		}
-	}
+	DropOrDestroyWeapons();
 	MulticastElim();
 	GetWorldTimerManager().SetTimer(ElimTimer,this,&AShooterCharacter::ElimTimerFinished,ElimDelay);
+}
+void AShooterCharacter::DropOrDestroyWeapons()
+{
+	if(Combat)
+	{
+		if(Combat->EquippedWeapon)
+		{
+			DropOrDestroyWeapon(Combat->EquippedWeapon);
+		}
+		if(Combat->SecondaryWeapon)
+		{
+			DropOrDestroyWeapon(Combat->SecondaryWeapon);
+		}
+	}
+}
+void AShooterCharacter::DropOrDestroyWeapon(AWeapon* Weapon)
+{
+	if(Weapon == nullptr) return;
+	if(Weapon->bDestroyWeapon)
+	{
+		Weapon->Destroy();
+	}
+	else
+	{
+		Weapon->Dropped();
+	}
 }
 void AShooterCharacter::MulticastElim_Implementation()
 {
@@ -158,7 +174,6 @@ void AShooterCharacter::MulticastElim_Implementation()
 	{
 		ShowSniperScopeWidget(false);
 	}
-	
 }
 void AShooterCharacter::UpdateDissolveMaterial(float DissolveValue)
 {
@@ -464,15 +479,7 @@ void AShooterCharacter::EquipButtonPressed()
 {
 	if(Combat)
 	{
-		if(HasAuthority())
-		{
-			Combat->EquipWeapon(OverlappingWeapon);
-		}
-		else
-		{
-			ServerEquipButtonPressed();
-		}
-		
+		ServerEquipButtonPressed();
 	}
 }
 void AShooterCharacter::CrouchButtonPressed()
@@ -611,7 +618,14 @@ void AShooterCharacter::ServerEquipButtonPressed_Implementation()
 {
 	if(Combat && HasAuthority())
 	{
-		Combat->EquipWeapon(OverlappingWeapon);
+		if(OverlappingWeapon)
+		{
+			Combat->EquipWeapon(OverlappingWeapon);
+		}
+		else if (Combat->bShouldSwapWeapon())
+		{
+			Combat->SwapWeapon();
+		}
 	}
 }
 void AShooterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

@@ -20,11 +20,12 @@ class USoundCue;
 UENUM(BlueprintType)
 enum class EWeaponState : uint8
 {
-	EW_Initial	UMETA(DisplayName = "InitialState"),
-	EW_Equipped	UMETA(DisplayName = "Equipped"),
-	EW_Dropped	UMETA(DisplayName = "Dropped"),
-
-	EW_MAX		UMETA(DisplayName = "DefaultMAX"),
+	EW_Initial				UMETA(DisplayName = "InitialState"),
+	EW_Equipped				UMETA(DisplayName = "Equipped"),
+	EW_Dropped				UMETA(DisplayName = "Dropped"),
+	EW_EquippedSecondary	UMETA(DisplayName = "EquippedSecondary"),
+	
+	EW_MAX					UMETA(DisplayName = "DefaultMAX"),
 	
 };
 
@@ -100,6 +101,10 @@ public:
 protected:
 	
 	virtual void BeginPlay() override;
+	virtual void OnWeaponStateSet();
+	virtual void OnEquipped();
+	virtual void OnDropped();
+	virtual void OnEquippedSecondary();
 	
 	UFUNCTION()
 	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent,AActor* OtherActor,UPrimitiveComponent* OtherComp,int32 OtherBodyIndex,

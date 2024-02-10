@@ -118,39 +118,75 @@ void AWeapon::Dropped()
 void AWeapon::SetWeaponState(EWeaponState State)
 {
 	WeaponState = State;
+	OnWeaponStateSet();
+	
+}
+void AWeapon::OnWeaponStateSet()
+{
 	switch (WeaponState)
 	{
 	case EWeaponState::EW_Equipped:
-		ShowPickUpWidget(false);
-		GetPickUpSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		WeaponMesh->SetSimulatePhysics(false);
-		WeaponMesh->SetEnableGravity(false);
-		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		if(WeaponType == EWeaponType::EWT_SMG)
-		{
-			WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-			WeaponMesh->SetEnableGravity(true);
-			WeaponMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
-		}
-		EnableCustomDepth(false);
+		OnEquipped();
+		break;
+	case EWeaponState::EW_EquippedSecondary:
+		OnEquippedSecondary();
 		break;
 	case EWeaponState::EW_Dropped:
-		if(HasAuthority())
-		{
-			GetPickUpSphere()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		}
-		WeaponMesh->SetSimulatePhysics(true);
-		WeaponMesh->SetEnableGravity(true);
-		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		WeaponMesh->SetCollisionResponseToAllChannels(ECR_Block);
-		WeaponMesh->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
-		WeaponMesh->SetCollisionResponseToChannel(ECC_Camera,ECR_Ignore);
-		
-		WeaponMesh->SetCustomDepthStencilValue(251);
-		WeaponMesh->MarkRenderStateDirty();
-		EnableCustomDepth(true);
+		OnDropped();
 		break;
 	}
+}
+void AWeapon::OnRep_WeaponState()
+{
+	OnWeaponStateSet();
+
+}
+void AWeapon::OnEquipped()
+{
+	ShowPickUpWidget(false);
+	GetPickUpSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	WeaponMesh->SetSimulatePhysics(false);
+	WeaponMesh->SetEnableGravity(false);
+	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if(WeaponType == EWeaponType::EWT_SMG)
+	{
+		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		WeaponMesh->SetEnableGravity(true);
+		WeaponMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+	}
+	EnableCustomDepth(false);
+}
+void AWeapon::OnDropped()
+{
+	if(HasAuthority())
+	{
+		GetPickUpSphere()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	}
+	WeaponMesh->SetSimulatePhysics(true);
+	WeaponMesh->SetEnableGravity(true);
+	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	WeaponMesh->SetCollisionResponseToAllChannels(ECR_Block);
+	WeaponMesh->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
+	WeaponMesh->SetCollisionResponseToChannel(ECC_Camera,ECR_Ignore);
+		
+	WeaponMesh->SetCustomDepthStencilValue(251);
+	WeaponMesh->MarkRenderStateDirty();
+	EnableCustomDepth(true);
+}
+void AWeapon::OnEquippedSecondary()
+{
+	ShowPickUpWidget(false);
+	GetPickUpSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	WeaponMesh->SetSimulatePhysics(false);
+	WeaponMesh->SetEnableGravity(false);
+	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if(WeaponType == EWeaponType::EWT_SMG)
+	{
+		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		WeaponMesh->SetEnableGravity(true);
+		WeaponMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+	}
+	EnableCustomDepth(false);
 }
 bool AWeapon::IsEmpty()
 {
@@ -178,37 +214,6 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 		Character->SetOverlappingWeapon(nullptr);
 	}
 }
-void AWeapon::OnRep_WeaponState()
-{
-	switch (WeaponState)
-	{
-		case EWeaponState::EW_Equipped:
-			ShowPickUpWidget(false);
-			WeaponMesh->SetSimulatePhysics(false);
-			WeaponMesh->SetEnableGravity(false);
-			WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			if(WeaponType == EWeaponType::EWT_SMG)
-			{
-				WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-				WeaponMesh->SetEnableGravity(true);
-				WeaponMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
-			}
-			break;
-		case EWeaponState::EW_Dropped:
-			if(HasAuthority())
-			{
-				GetPickUpSphere()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-			}
-			WeaponMesh->SetSimulatePhysics(true);
-			WeaponMesh->SetEnableGravity(true);
-			WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-			WeaponMesh->SetCollisionResponseToAllChannels(ECR_Block);
-			WeaponMesh->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
-			WeaponMesh->SetCollisionResponseToChannel(ECC_Camera,ECR_Ignore);
-
-			break;
-	}
-}
 void AWeapon::OnRep_Ammo()
 {
 	ShooterOwnerCharacter = ShooterOwnerCharacter == nullptr ? Cast<AShooterCharacter>(GetOwner()) : ShooterOwnerCharacter;
@@ -228,7 +233,12 @@ void AWeapon::OnRep_Owner()
 	}
 	else
 	{
-		SetHudAmmo();
+		ShooterOwnerCharacter = ShooterOwnerCharacter == nullptr ? Cast<AShooterCharacter>(Owner) : ShooterOwnerCharacter;
+		if(ShooterOwnerCharacter && ShooterOwnerCharacter->GetEquippedWeapon() && ShooterOwnerCharacter->GetEquippedWeapon() == this)
+		{
+			SetHudAmmo();
+		}
+	
 	}
 }
 void AWeapon::SpendRound()
