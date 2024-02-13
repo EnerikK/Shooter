@@ -40,7 +40,8 @@ public:
 	void FinishReloading();
 	
 	void FireButtonPressed(bool bPressed);
-
+	void SlideButtonPressed(bool bPressed);
+	
 	UFUNCTION(BlueprintCallable)
 	void ShotgunShellReload();
 
@@ -69,6 +70,7 @@ protected:
 	UFUNCTION()
 	void OnRep_SecondaryWeapon();
 	void Fire();
+	void Slide();
 	
 	UFUNCTION(Server, Reliable)
 	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
@@ -105,6 +107,7 @@ protected:
 	void ShowAttachedGrenade(bool bShowGrenade);
 	void EquipPrimaryWeapon(AWeapon* WeaponToEquip);
 	void EquipSecondaryWeapon(AWeapon* WeaponToEquip);
+	
 
 	
 private:
@@ -125,6 +128,8 @@ private:
 	UPROPERTY(Replicated)
 	bool bAiming;
 
+	bool bSlide;
+
 	UPROPERTY(EditAnywhere)
 	float BaseWalkSpeed;
 
@@ -132,6 +137,8 @@ private:
 	float AimWalkSpeed;
 
 	bool bFireButtonPressed;
+	
+	bool bSlideButtonPressed;
 
 	FVector HitTarget;
 
@@ -167,11 +174,13 @@ private:
 	FTimerHandle Firetimer;
 	
 	bool bCanFire = true;
+	bool bCanSlide = true;
 
 	void StartFiretimer();
 	void FireTimerFinished();
 
 	bool CanFire();
+	bool CanSlide();
 
 	//Carried ammo for the weapon equipped
 	UPROPERTY(ReplicatedUsing=OnRep_CarriedAmmo)
@@ -227,5 +236,6 @@ private:
 	int32 MaxGrenades = 4;
 
 	void UpdateHudGrenades();
+	
 	
 };

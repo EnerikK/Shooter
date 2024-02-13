@@ -6,6 +6,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Character/ShooterCharacter.h"
 #include "Components/CombatComponent.h"
+#include "Components/Image.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Game/ShooterGameModeBase.h"
@@ -50,8 +51,33 @@ void AShooterPlayerController::Tick(float DeltaSeconds)
 	SetHudTime();
 	CheckTimeSync(DeltaSeconds);
 	PollInit();
+	CheckPing(DeltaSeconds);
 	
-	
+}
+void AShooterPlayerController::CheckPing(float DeltaSeconds)
+{
+	HighPingRunningTime += DeltaSeconds;
+	if(HighPingRunningTime > CheckPingFrequency)
+	{
+		PlayerState = PlayerState == nullptr ? GetPlayerState<AShooterPlayerState>()  : PlayerState;
+		if(PlayerState)
+		{
+			if(PlayerState->GetCompressedPing() * 4 > HighPingThreshold) // Ping is compressed  thats why we * 4 
+			{
+				HighPingWarning();
+				PingAnimationRunningTime = 0.f;
+			}
+		}
+		HighPingRunningTime = 0.f;
+	}
+	if(ShooterHUD && ShooterHUD->HudOverlay && ShooterHUD->HudOverlay->HighPingAnimation && ShooterHUD->HudOverlay->IsAnimationPlaying(ShooterHUD->HudOverlay->HighPingAnimation))
+	{
+		PingAnimationRunningTime += DeltaSeconds;
+		if(PingAnimationRunningTime > HighPingDuration)
+		{
+			StopHighPingWarning();
+		}
+	}
 }
 void AShooterPlayerController::CheckTimeSync(float DeltaSeconds)
 {
@@ -83,6 +109,29 @@ void AShooterPlayerController::PollInit()
 					if(bInitializeGrenades) SetHudGrenades(ShooterCharacter->GetCombat()->GetGrenades());                        
 				}
 			}
+		}
+	}
+}
+void AShooterPlayerController::HighPingWarning()
+{
+	ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
+	bool bHudValid = ShooterHUD && ShooterHUD->HudOverlay && ShooterHUD->HudOverlay->HighPingImage && ShooterHUD->HudOverlay->HighPingAnimation;
+	if(bHudValid)
+	{
+		ShooterHUD->HudOverlay->HighPingImage->SetOpacity(1.f);
+		ShooterHUD->HudOverlay->PlayAnimation(ShooterHUD->HudOverlay->HighPingAnimation,0.5f,5);
+	}
+}
+void AShooterPlayerController::StopHighPingWarning()
+{
+	ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
+	bool bHudValid = ShooterHUD && ShooterHUD->HudOverlay && ShooterHUD->HudOverlay->HighPingImage && ShooterHUD->HudOverlay->HighPingAnimation;
+	if(bHudValid)
+	{
+		ShooterHUD->HudOverlay->HighPingImage->SetOpacity(0.f);
+		if(ShooterHUD->HudOverlay->IsAnimationPlaying(ShooterHUD->HudOverlay->HighPingAnimation))
+		{
+			ShooterHUD->HudOverlay->StopAnimation(ShooterHUD->HudOverlay->HighPingAnimation);
 		}
 	}
 }
@@ -456,6 +505,9 @@ void AShooterPlayerController::SetupInputComponent()
 	EnhancedInputComponent->BindAction(
 	GrenadeToss,ETriggerEvent::Triggered,this,&AShooterPlayerController::Toss);
 	
+	EnhancedInputComponent->BindAction(
+	SlideAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Slide);
+	
 }
 void AShooterPlayerController::Move(const FInputActionValue& Value)
 {
@@ -595,6 +647,16 @@ void AShooterPlayerController::Toss(const FInputActionValue& Value)
 	if(ControlledCharacter)
 	{
 		ControlledCharacter->GrenadeButtonPressed();
+	}
+}
+
+void AShooterPlayerController::Slide(const FInputActionValue& Value)
+{
+	if(bDisableGameplay) return;
+	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
+	if(ControlledCharacter)
+	{
+		ControlledCharacter->SlideButtonPressed();
 	}
 }
 	

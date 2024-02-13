@@ -35,7 +35,9 @@ public:
 	void PlayReloadMontage();
 	void PlayElimMontage();
 	void PlayHitReactMontage();
-	void PlayThrowGrenadeMontage();
+	void PlayThrowGrenadeMontage() const;
+	void PlaySlideMontage();
+
 	
 	void UpdateHudHealth();
 	void UpdateHudShield();
@@ -54,10 +56,12 @@ public:
 	void FireButtonReleased();
 	void ReloadButtonPressed();
 	void GrenadeButtonPressed();
+	void SlideButtonPressed();
 	
 	void SetOverlappingWeapon(AWeapon* Weapon);
 	bool IsWeaponEquipped();
 	bool IsAiming();
+	bool IsSliding();
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowSniperScopeWidget(bool bShowScope);
 	void SpawnDefaultWeapon();
@@ -150,6 +154,9 @@ private:
 
 	UPROPERTY(EditAnywhere , Category= "Combat")
 	UAnimMontage* GrenadeToss;
+
+	UPROPERTY(EditAnywhere , Category= "Combat")
+	UAnimMontage* Slide;
 	
 	void HideCamera();
 	

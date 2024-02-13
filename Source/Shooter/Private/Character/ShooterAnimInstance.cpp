@@ -81,4 +81,5 @@ void UShooterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	bUseFabrik = Character->GetCombatState() == ECombatState::ECState_Unoccupied;
 	bUseAimOffSets = Character->GetCombatState() == ECombatState::ECState_Unoccupied;
 	bTransformRightHand = Character->GetCombatState() == ECombatState::ECState_Unoccupied;
+	
 }

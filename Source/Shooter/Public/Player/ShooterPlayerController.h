@@ -86,7 +86,13 @@ protected:
 
 	UFUNCTION(Client,Reliable)
 	void ClientJoinMidGame(FName StateOfMatch,float Cooldown,float Intervention,float Match,float StartingTime);
-	
+
+	/*Lag*/
+	void HighPingWarning();
+
+	void StopHighPingWarning();
+
+	void CheckPing(float DeltaSeconds);
 private:
 
 	UPROPERTY()
@@ -136,6 +142,16 @@ private:
 	float HudWeaponAmmo;
 	bool bInitializeCarriedAmmo = false;
 	bool bInitializeWeaponAmmo =false;
+
+	/*Ping*/
+	float HighPingRunningTime = 0.f;
+	UPROPERTY(EditAnywhere)
+	float HighPingDuration = 5.f;
+	UPROPERTY(EditAnywhere)
+	float CheckPingFrequency = 20.f;
+	UPROPERTY(EditAnywhere)
+	float HighPingThreshold = 50.f;
+	float PingAnimationRunningTime = 0.f;
 	
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputMappingContext> PlayerContext;
@@ -170,6 +186,9 @@ private:
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> GrenadeToss;
 
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> SlideAction;
+
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void Jump(const FInputActionValue& Value);
@@ -180,6 +199,8 @@ private:
 	void Fire(const FInputActionValue& Value);
 	void Reload(const FInputActionValue& Value);
 	void Toss(const FInputActionValue& Value);
+	void Slide(const FInputActionValue& Value);
+
 
 };
 

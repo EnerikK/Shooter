@@ -13,6 +13,7 @@
 #include "Hud/ShooterHUD.h"
 #include "Player/ShooterPlayerController.h"
 #include "TimerManager.h"
+#include "Character/ShooterAnimInstance.h"
 #include "Sound/SoundCue.h"
 #include "Weapon/Projectile.h"
 
@@ -94,6 +95,20 @@ void UCombatComponent::FireButtonPressed(bool bPressed)
 		bCanFire = false;
 	}
 }
+
+void UCombatComponent::SlideButtonPressed(bool bPressed)
+{
+	bSlideButtonPressed = bPressed;
+	if(bSlideButtonPressed)
+	{
+		Slide();
+	}
+	else
+	{
+		bCanSlide = false;
+	}
+	
+}
 void UCombatComponent::ShotgunShellReload()
 {
 	if(Character && Character->HasAuthority())
@@ -114,6 +129,23 @@ void UCombatComponent::Fire()
 		StartFiretimer();
 	}
 }
+
+void UCombatComponent::Slide()
+{
+	if(Character)
+	{
+		if(CanSlide())
+		{
+			Character->PlaySlideMontage();
+			bCanSlide = false;
+		}
+		else
+		{
+			bCanSlide = false;
+		}
+	}
+}
+
 void UCombatComponent::StartFiretimer()
 {
 	if(EquippedWeapon == nullptr || Character == nullptr) return;
@@ -137,6 +169,12 @@ bool UCombatComponent::CanFire()
 	return !EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECState_Unoccupied;
 	
 }
+bool UCombatComponent::CanSlide()
+{
+	if(CombatState == ECombatState::ECState_Unoccupied) return true;
+	return false;
+}
+
 void UCombatComponent::OnRep_CarriedAmmo()
 {
 	Controller = Controller == nullptr ? Cast<AShooterPlayerController>(Character->Controller) : Controller;

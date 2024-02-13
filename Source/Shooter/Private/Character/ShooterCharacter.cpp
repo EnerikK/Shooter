@@ -426,7 +426,7 @@ void AShooterCharacter::PlayHitReactMontage()
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
-void AShooterCharacter::PlayThrowGrenadeMontage()
+void AShooterCharacter::PlayThrowGrenadeMontage() const
 {
 	if(Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
@@ -438,6 +438,18 @@ void AShooterCharacter::PlayThrowGrenadeMontage()
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
+void AShooterCharacter::PlaySlideMontage()
+{
+	if(Combat == nullptr) return;
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if(AnimInstance && Slide)
+	{
+		AnimInstance->Montage_Play(Slide);
+	}
+	
+}
+
 void AShooterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
 	if(OverlappingWeapon)
@@ -461,6 +473,12 @@ bool AShooterCharacter::IsAiming()
 {
 	return (Combat && Combat->bAiming);
 }
+
+bool AShooterCharacter::IsSliding()
+{
+	return (Combat && Combat->bSlide);
+}
+
 void AShooterCharacter::SpawnDefaultWeapon()
 {
 	AShooterGameModeBase* ShooterGameMode = Cast<AShooterGameModeBase>(UGameplayStatics::GetGameMode(this));
@@ -544,6 +562,16 @@ void AShooterCharacter::GrenadeButtonPressed()
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("LEEEEEROYYYYYYY!"));	
 	}
 }
+
+void AShooterCharacter::SlideButtonPressed()
+{
+	if(Combat)
+	{
+		Combat->SlideButtonPressed(true);
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Sliding!"));	
+	}
+}
+
 void AShooterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 {
 	if(OverlappingWeapon)
