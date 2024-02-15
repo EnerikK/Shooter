@@ -25,8 +25,20 @@ enum class EWeaponState : uint8
 	EW_Dropped				UMETA(DisplayName = "Dropped"),
 	EW_EquippedSecondary	UMETA(DisplayName = "EquippedSecondary"),
 	
-	EW_MAX					UMETA(DisplayName = "DefaultMAX"),
+	EW_MAX					UMETA(DisplayName = "DefaultMAX")
 	
+};
+UENUM(BlueprintType)
+enum class EFireType : uint8
+{
+	EF_HitScan      UMETA(DisplayName = "Hit Scan Weapon"),
+	EF_Projectile   UMETA(DisplayName = "Projectile Weapon"),
+	EF_Shotgun		UMETA(DisplayName = "Shotgun Weapon"),
+	
+	EF_MAX			UMETA(DisplayName = "DefaultMAX")
+
+
+
 };
 
 UCLASS()
@@ -42,6 +54,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void OnRep_Owner() override;
 	virtual void Fire(const FVector& HitTarget);
+	FVector TraceEndWithScatter(const FVector& HitTarget);
 	void Dropped();
 	void SetHudAmmo();
 	void AddAmmo(int32 AmmoToAdd);
@@ -67,6 +80,9 @@ public:
 	bool bIsAutomatic = true;
 
 	bool bDestroyWeapon = false;
+
+	UPROPERTY(EditAnywhere,Category="Weapon Scatter")
+	bool bUseScatter = false;
 
 	/*
 	* Texture for the cross-hairs
@@ -97,6 +113,9 @@ public:
 	 * CustomDepth
 	 */
 	void EnableCustomDepth(bool bEnable);
+
+	UPROPERTY(EditAnywhere)
+	EFireType FireType;
 	
 protected:
 	
@@ -112,6 +131,15 @@ protected:
 
 	UFUNCTION()
 	void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent,AActor* OtherActor,UPrimitiveComponent* OtherComp,int32 OtherBodyIndex);
+
+	/*
+	* Trace end with scatter 
+	*/
+	UPROPERTY(EditAnywhere,Category="Weapon Scatter")
+	float DistanceToSphere = 800.f;
+
+	UPROPERTY(EditAnywhere,Category="Weapon Scatter")
+	float SphereRadius = 75.f;
 
 private:
 
@@ -164,5 +192,7 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
+
+
 		
 };

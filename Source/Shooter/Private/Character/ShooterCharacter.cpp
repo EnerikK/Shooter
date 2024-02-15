@@ -644,7 +644,7 @@ void AShooterCharacter::OnRep_Shield(float LastShield)
 }
 void AShooterCharacter::ServerEquipButtonPressed_Implementation()
 {
-	if(Combat && HasAuthority())
+	if(Combat)
 	{
 		if(OverlappingWeapon)
 		{

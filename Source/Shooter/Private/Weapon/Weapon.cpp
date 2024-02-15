@@ -10,6 +10,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Player/ShooterPlayerController.h"
 #include "Weapon/AmmoEject.h"
 #include "Weapon/WeaponTypes.h"
@@ -54,13 +55,10 @@ void AWeapon::EnableCustomDepth(bool bEnable)
 void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
-	if(HasAuthority())
-	{
-		PickUpSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		PickUpSphere->SetCollisionResponseToChannel(ECC_Pawn,ECR_Overlap);
-		PickUpSphere->OnComponentBeginOverlap.AddDynamic(this,&AWeapon::OnSphereOverlap);
-		PickUpSphere->OnComponentEndOverlap.AddDynamic(this,&AWeapon::OnSphereEndOverlap);
-	}
+	PickUpSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	PickUpSphere->SetCollisionResponseToChannel(ECC_Pawn,ECR_Overlap);
+	PickUpSphere->OnComponentBeginOverlap.AddDynamic(this,&AWeapon::OnSphereOverlap);
+	PickUpSphere->OnComponentEndOverlap.AddDynamic(this,&AWeapon::OnSphereEndOverlap);
 	if(PickUpWidget)
 	{
 		PickUpWidget->SetVisibility(false);
@@ -107,6 +105,27 @@ void AWeapon::Fire(const FVector& HitTarget)
 	{
 		SpendRound();
 	}
+}
+FVector AWeapon::TraceEndWithScatter(const FVector& HitTarget)
+{
+	const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
+	if(MuzzleFlashSocket == nullptr) return FVector();
+
+	const FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
+	const FVector TraceStart = SocketTransform.GetLocation();
+	
+	const FVector ToTargetNormalized = (HitTarget - TraceStart).GetSafeNormal();
+	const FVector SphereCenter = TraceStart + ToTargetNormalized * DistanceToSphere;
+	const FVector RandVec = UKismetMathLibrary::RandomUnitVector() * FMath::FRandRange(0.f,SphereRadius);
+	const FVector EndLoc = SphereCenter + RandVec;
+	const FVector ToEndLoc = EndLoc - TraceStart;
+		
+	/*DrawDebugSphere(GetWorld(),SphereCenter,SphereRadius,12,FColor::Red,true);
+	DrawDebugSphere(GetWorld(),EndLoc,4.f,12,FColor::Orange,true);
+	DrawDebugLine(GetWorld(),TraceStart,FVector(TraceStart + ToEndLoc * TRACE / ToEndLoc.Size()),FColor::Black,true);*/
+
+	return  FVector(TraceStart + ToEndLoc * TRACE / ToEndLoc.Size());
+	
 }
 void AWeapon::Dropped()
 {
