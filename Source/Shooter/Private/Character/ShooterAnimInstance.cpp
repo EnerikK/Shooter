@@ -79,6 +79,10 @@ void UShooterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		}
 	}
 	bUseFabrik = Character->GetCombatState() == ECombatState::ECState_Unoccupied;
+	if(Character->IsLocallyControlled() && Character->GetCombatState() != ECombatState::ECState_ThrowGrenade)
+	{
+		bUseFabrik = !Character->IsLocallyReloading();
+	}
 	bUseAimOffSets = Character->GetCombatState() == ECombatState::ECState_Unoccupied;
 	bTransformRightHand = Character->GetCombatState() == ECombatState::ECState_Unoccupied;
 	

@@ -84,6 +84,7 @@ public:
 	FORCEINLINE UAnimMontage* GetReloadMontage() const {return ReloadMontage;}
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const {return AttachedGrenade;}
 	ECombatState GetCombatState() const;
+	bool IsLocallyReloading();
 
 
 protected:

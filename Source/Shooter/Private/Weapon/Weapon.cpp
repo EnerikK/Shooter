@@ -74,7 +74,6 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AWeapon,WeaponState);
-	DOREPLIFETIME(AWeapon,Ammo);
 }
 
 
@@ -101,10 +100,8 @@ void AWeapon::Fire(const FVector& HitTarget)
 			}
 		}
 	}
-	if(HasAuthority())
-	{
-		SpendRound();
-	}
+	SpendRound();
+	
 }
 FVector AWeapon::TraceEndWithScatter(const FVector& HitTarget)
 {
@@ -236,9 +233,38 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 		Character->SetOverlappingWeapon(nullptr);
 	}
 }
-void AWeapon::OnRep_Ammo()
+void AWeapon::SpendRound()
 {
-	ShooterOwnerCharacter = ShooterOwnerCharacter == nullptr ? Cast<AShooterCharacter>(GetOwner()) : ShooterOwnerCharacter;
+	Ammo = FMath::Clamp(Ammo - 1,0,MagCapacity);
+	SetHudAmmo();
+	if(HasAuthority())
+	{
+		ClientUpdateAmmo(Ammo);
+	}
+	else
+	{
+		++Sequence;
+	}
+}
+void AWeapon::ClientUpdateAmmo_Implementation(int32 ServerAmmo)
+{
+	if(HasAuthority()) return;
+	Ammo = ServerAmmo;
+	--Sequence;
+	Ammo -= Sequence;
+	SetHudAmmo();
+}
+void AWeapon::AddAmmo(int32 AmmoToAdd)
+{
+	Ammo = FMath::Clamp(Ammo + AmmoToAdd,0,MagCapacity);
+	SetHudAmmo();
+	ClientAddAmmo(AmmoToAdd);
+}
+void AWeapon::ClientAddAmmo_Implementation(int32 AmmoToAdd)
+{
+	if(HasAuthority()) return;
+	Ammo = FMath::Clamp(Ammo + AmmoToAdd,0,MagCapacity);
+	ShooterOwnerCharacter = ShooterOwnerCharacter == nullptr ?  Cast<AShooterCharacter>(GetOwner()) : ShooterOwnerCharacter;
 	if(ShooterOwnerCharacter && ShooterOwnerCharacter->GetCombat() && IsFull())
 	{
 		ShooterOwnerCharacter->GetCombat()->JumpToShotgunEnd();
@@ -263,11 +289,6 @@ void AWeapon::OnRep_Owner()
 	
 	}
 }
-void AWeapon::SpendRound()
-{
-	Ammo = FMath::Clamp(Ammo - 1,0,MagCapacity);
-	SetHudAmmo();
-}
 void AWeapon::SetHudAmmo()
 {
 	ShooterOwnerCharacter = ShooterOwnerCharacter == nullptr ? Cast<AShooterCharacter>(GetOwner()) : ShooterOwnerCharacter;
@@ -279,11 +300,6 @@ void AWeapon::SetHudAmmo()
 			ShooterOwnerPlayerController->SetHudWeaponAmmo(Ammo);
 		}
 	}
-}
-void AWeapon::AddAmmo(int32 AmmoToAdd)
-{
-	Ammo = FMath::Clamp(Ammo - AmmoToAdd,0,MagCapacity);
-	SetHudAmmo();
 }
 void AWeapon::ShowPickUpWidget(bool bShowWidget)
 {
