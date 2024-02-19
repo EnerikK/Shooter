@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/LagCompensationComponent.h"
 #include "Components/TimelineComponent.h"
 #include "GameFramework/Character.h"
 #include "Interface/InteractInterface.h"
@@ -10,7 +11,10 @@
 #include "Shooter/Types/CombatState.h"
 #include "ShooterCharacter.generated.h"
 
+class ULagCompensationComponent;
+class UBoxComponent;
 class UBuffComponent;
+class ALagCompensationComponent;
 class AShooterPlayerState;
 class AShooterPlayerController;
 class UCombatComponent;
@@ -86,6 +90,56 @@ public:
 	ECombatState GetCombatState() const;
 	bool IsLocallyReloading();
 
+	/*Hit Boxes used for server-side rewind*/
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Head;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Pelvis;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Spine_02;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Spine_03;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Upperarm_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Upperarm_r;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Lowerarm_r;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Lowerarm_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Hand_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Hand_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Thigh_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Thigh_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Calf_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Calf_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Foot_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* Foot_r;
+
 
 protected:
 	
@@ -115,11 +169,15 @@ private:
 	UPROPERTY(VisibleAnywhere,Category="Camera")
 	UCameraComponent* FollowCamera;
 
+	/*Components*/
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = true))
 	UCombatComponent* Combat;
 
 	UPROPERTY(VisibleAnywhere)
 	UBuffComponent* Buff;
+
+	UPROPERTY(VisibleAnywhere)
+	ULagCompensationComponent* LagCompensation;
 	
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
 	AWeapon* OverlappingWeapon;
