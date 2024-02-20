@@ -87,6 +87,7 @@ public:
 	FORCEINLINE UBuffComponent* GetBuff() const {return Buff;}
 	FORCEINLINE UAnimMontage* GetReloadMontage() const {return ReloadMontage;}
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const {return AttachedGrenade;}
+	FORCEINLINE ULagCompensationComponent* GetLagCompensation() const {return LagCompensation;}
 	ECombatState GetCombatState() const;
 	bool IsLocallyReloading();
 
@@ -140,6 +141,8 @@ public:
 	UPROPERTY(EditAnywhere)
 	UBoxComponent* Foot_r;
 
+	UPROPERTY(EditAnywhere)
+	TMap<FName,UBoxComponent*> HitCollisionBoxes;
 
 protected:
 	
