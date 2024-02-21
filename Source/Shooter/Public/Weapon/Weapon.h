@@ -58,8 +58,8 @@ public:
 	void Dropped();
 	void SetHudAmmo();
 	void AddAmmo(int32 AmmoToAdd);
+	void SetWeaponState(EWeaponState State);
 	
-	FORCEINLINE void SetWeaponState(EWeaponState State);
 	FORCEINLINE USphereComponent* GetPickUpSphere() const {return PickUpSphere;}
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh()const {return WeaponMesh;}
 	FORCEINLINE float GetZoomedPov() const {return ZoomPOV;}
@@ -67,6 +67,7 @@ public:
 	FORCEINLINE EWeaponType GetWeaponType() const {return WeaponType;}
 	FORCEINLINE int32 GetAmmo() const {return Ammo;}
 	FORCEINLINE int32 GetMagCapacity() const {return MagCapacity;}
+	FORCEINLINE float GetDamage() const {return Damage;}
 	bool IsEmpty();
 	bool IsFull();
 
@@ -87,7 +88,6 @@ public:
 	/*
 	* Texture for the cross-hairs
 	*/
-
 	UPROPERTY(EditAnywhere,Category="Crosshair")
 	UTexture2D* CrosshairCenter;
 
@@ -105,7 +105,6 @@ public:
 	/*
 	* Texture for the cross-hairs end
 	*/
-
 	UPROPERTY(EditAnywhere)
 	USoundCue* EquipSound;
 
@@ -140,6 +139,18 @@ protected:
 
 	UPROPERTY(EditAnywhere,Category="Weapon Scatter")
 	float SphereRadius = 75.f;
+	
+	UPROPERTY(EditAnywhere)
+	float Damage = 20.f;
+
+	UPROPERTY(EditAnywhere)
+	bool bUseServerSideRewind = false;
+
+	UPROPERTY()
+	AShooterCharacter* ShooterOwnerCharacter;
+	
+	UPROPERTY()
+	AShooterPlayerController* ShooterOwnerPlayerController;
 
 private:
 
@@ -180,13 +191,7 @@ private:
 	int32 Sequence = 0;
 
 	void SpendRound(); //shoot bullet
-
-	UPROPERTY()
-	AShooterCharacter* ShooterOwnerCharacter;
 	
-	UPROPERTY()
-	AShooterPlayerController* ShooterOwnerPlayerController;
-
 	/*
 	 * Zoom Pov WhileAiming
 	 */
@@ -198,7 +203,5 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
-
-
-		
+	
 };

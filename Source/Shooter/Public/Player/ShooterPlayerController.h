@@ -48,6 +48,9 @@ public:
 	void HandleMatchHasStarted();
 	void HandleCooldown();
 
+	UPROPERTY()
+	float SingleTripTime = 0.f;
+	
 	UPROPERTY(Replicated)
 	bool bDisableGameplay = false;
 
