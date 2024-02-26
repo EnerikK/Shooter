@@ -25,12 +25,13 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 
 		FHitResult FireHit;
 		WeaponTraceHit(Start,HitTarget,FireHit);
-		AShooterCharacter* Character = Cast<AShooterCharacter>(FireHit.GetActor());
-		if(Character && InstigatorController)
+		AShooterCharacter* ShooterCharacter = Cast<AShooterCharacter>(FireHit.GetActor());
+		if(ShooterCharacter && InstigatorController)
 		{
-			if(HasAuthority() && !bUseServerSideRewind)
+			bool bCauseAuthDamage = !bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
+			if(HasAuthority() && bCauseAuthDamage)
 			{
-				UGameplayStatics::ApplyDamage(Character,Damage,InstigatorController,this,UDamageType::StaticClass());
+				UGameplayStatics::ApplyDamage(ShooterCharacter,Damage,InstigatorController,this,UDamageType::StaticClass());
 			}
 			if(!HasAuthority()  && bUseServerSideRewind)
 			{
@@ -39,7 +40,7 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 				if(ShooterOwnerCharacter && ShooterOwnerPlayerController && ShooterOwnerCharacter->GetLagCompensation() && ShooterOwnerCharacter->IsLocallyControlled())
 				{
 					ShooterOwnerCharacter->GetLagCompensation()->ServerScoreRequest(
-						Character,
+						ShooterCharacter,
 						Start,
 						HitTarget,
 						ShooterOwnerPlayerController->GetServerTime() - ShooterOwnerPlayerController->SingleTripTime,

@@ -6,9 +6,9 @@
 #include "Components/ActorComponent.h"
 #include "LagCompensationComponent.generated.h"
 
+class AShooterCharacter;
 class AWeapon;
 class AShooterPlayerController;
-class AShooterCharacter;
 
 USTRUCT(BlueprintType)
 struct FBoxInformation
@@ -75,17 +75,41 @@ public:
 	friend AShooterCharacter;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	void ShowFramePackage(const FFramePackage& Package,const FColor& Color);
-	FServerSideRewindResult ServerSideRewind(AShooterCharacter* HitCharacter,const FVector_NetQuantize& TraceStart,const FVector_NetQuantize& HitLocation,float HitTime);
+
+	/*HitScan Weapons*/
+	FServerSideRewindResult ServerSideRewind(
+		AShooterCharacter* HitCharacter,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize& HitLocation,
+		float HitTime);
+	/*Projectile*/
+	FServerSideRewindResult ProjectileServerSideRewind(
+		AShooterCharacter* HitCharacter,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize100& InitialVelocity,
+		float HitTime);
+	/*Shotgun weapons*/
 	FShotGunServerSideRewind ShotGunServerSideRewind(
 		const TArray<AShooterCharacter*>& HitCharacters,
 		const FVector_NetQuantize& TraceStart,
 		const TArray<FVector_NetQuantize>& HitLocations,
 		float HitTime);
-	
+	/*HitScan Weapons*/
 	UFUNCTION(Server,Reliable)
-	void ServerScoreRequest(AShooterCharacter* HitCharacter ,const FVector_NetQuantize& TraceStart,
-		const FVector_NetQuantize& HitLocation,float HitTime,AWeapon* DamageCauser);
-
+	void ServerScoreRequest(
+		AShooterCharacter* HitCharacter ,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize& HitLocation,
+		float HitTime,
+		AWeapon* DamageCauser);
+	/*Projectile*/
+	UFUNCTION(Server,Reliable)
+	void ProjectileServerScoreRequest(
+		AShooterCharacter* HitCharacter,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize100& InitialVelocity,
+		float HitTime);
+	/*HitScan Weapons*/
 	UFUNCTION(Server,Reliable)
 	void ShotgunServerScoreRequest(
 		const TArray<AShooterCharacter*>& HitCharacters,
@@ -97,21 +121,28 @@ protected:
 	virtual void BeginPlay() override;
 	void SaveFramePackage(FFramePackage& Package);
 	FFramePackage InterpBetweenFrames(const FFramePackage& OlderFrame,const FFramePackage& YoungerFrame ,float HitTime);
-	FServerSideRewindResult ConfirmHit(
-		const FFramePackage& Package,
-		AShooterCharacter* HitCharacter,
-		const FVector_NetQuantize& TraceStart,
-		const FVector_NetQuantize& HitLocation);
-
+	
 	void CacheBoxPosition(AShooterCharacter* HitCharacter,FFramePackage& OutFramePackage);
 	void MoveBoxes(AShooterCharacter* HitCharacter,const FFramePackage& Package);
 	void ResetHitBoxes(AShooterCharacter* HitCharacter,const FFramePackage& Package);
 	void SaveFramePackage();
 	void EnableCharacterMeshCollision(AShooterCharacter* HitCharacter,ECollisionEnabled::Type CollisionEnabled);
 	FFramePackage GetFrameToCheck(AShooterCharacter* HitCharacter,float HitTime);
-	
-	/*Shotgun*/
-	
+
+	/*HitScan Weapons*/
+	FServerSideRewindResult ConfirmHit(
+		const FFramePackage& Package,
+		AShooterCharacter* HitCharacter,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize& HitLocation);
+	/*Projectile*/
+	FServerSideRewindResult ProjectileConfirmHit(
+		const FFramePackage& Package,
+		AShooterCharacter* HitCharacter,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize100& InitialVelocity,
+		float HitTime);
+	/*Shotgun Weapons*/
 	FShotGunServerSideRewind ShotGunConfirmHit(
 		const TArray<FFramePackage>& FramePackages,
 		const FVector_NetQuantize& TraceStart,
