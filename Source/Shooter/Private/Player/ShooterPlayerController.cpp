@@ -62,10 +62,16 @@ void AShooterPlayerController::CheckPing(float DeltaSeconds)
 		PlayerState = PlayerState == nullptr ? GetPlayerState<AShooterPlayerState>()  : PlayerState;
 		if(PlayerState)
 		{
+			UE_LOG(LogTemp,Warning,TEXT("PlayerState->GetPing() * 4 : %d"),PlayerState->GetCompressedPing()*4);
 			if(PlayerState->GetCompressedPing() * 4 > HighPingThreshold) // Ping is compressed  thats why we * 4 
 			{
 				HighPingWarning();
 				PingAnimationRunningTime = 0.f;
+				ServerReportPingStatus(true);
+			}
+			else
+			{
+				ServerReportPingStatus(false);
 			}
 		}
 		HighPingRunningTime = 0.f;
@@ -78,6 +84,10 @@ void AShooterPlayerController::CheckPing(float DeltaSeconds)
 			StopHighPingWarning();
 		}
 	}
+}
+void AShooterPlayerController::ServerReportPingStatus_Implementation(bool bHighPing)//Is the ping too high ? 
+{
+	HighPingDelegate.Broadcast(bHighPing);
 }
 void AShooterPlayerController::CheckTimeSync(float DeltaSeconds)
 {
@@ -510,6 +520,7 @@ void AShooterPlayerController::SetupInputComponent()
 	SlideAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Slide);
 	
 }
+
 void AShooterPlayerController::Move(const FInputActionValue& Value)
 {
 	if(bDisableGameplay) return;

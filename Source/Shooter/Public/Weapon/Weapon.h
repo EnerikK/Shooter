@@ -143,7 +143,7 @@ protected:
 	UPROPERTY(EditAnywhere)
 	float Damage = 20.f;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Replicated,EditAnywhere)
 	bool bUseServerSideRewind = false;
 
 	UPROPERTY()
@@ -151,6 +151,9 @@ protected:
 	
 	UPROPERTY()
 	AShooterPlayerController* ShooterOwnerPlayerController;
+
+	UFUNCTION()
+	void OnPingTooHigh(bool bPingTooHigh);
 
 private:
 
@@ -203,5 +206,7 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
+
+	
 	
 };

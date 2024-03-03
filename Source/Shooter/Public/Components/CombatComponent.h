@@ -36,8 +36,13 @@ public:
 	void EquipWeapon(AWeapon* WeaponToEquip);
 	void SwapWeapon();
 	void Reload();
+	
 	UFUNCTION(BlueprintCallable)
 	void FinishReloading();
+	UFUNCTION(BlueprintCallable)
+	void FinishSwap();
+	UFUNCTION(BlueprintCallable)
+	void FinishSwapAttachWeapon();
 	
 	void FireButtonPressed(bool bPressed);
 	void SlideButtonPressed(bool bPressed);

@@ -35,8 +35,10 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
 	virtual void Destroyed() override;
+	/*Montages*/
 	void PlayFireMontage(bool bAiming);
 	void PlayReloadMontage();
+	void PlaySwapMontage();
 	void PlayElimMontage();
 	void PlayHitReactMontage();
 	void PlayThrowGrenadeMontage() const;
@@ -219,6 +221,9 @@ private:
 
 	UPROPERTY(EditAnywhere , Category= "Combat")
 	UAnimMontage* Slide;
+
+	UPROPERTY(EditAnywhere , Category= "Combat")
+	UAnimMontage* Swap;
 	
 	void HideCamera();
 	

@@ -491,6 +491,16 @@ void AShooterCharacter::PlayReloadMontage()
 	}
 	
 }
+void AShooterCharacter::PlaySwapMontage()
+{
+	if(Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if(AnimInstance && Swap)
+	{
+		AnimInstance->Montage_Play(Swap);
+	}
+}
 void AShooterCharacter::PlayElimMontage()
 {
 	if(Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
@@ -521,8 +531,6 @@ void AShooterCharacter::PlayThrowGrenadeMontage() const
 	if(AnimInstance && GrenadeToss)
 	{
 		AnimInstance->Montage_Play(GrenadeToss);
-		FName SectionName("FrontHit");
-		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
 void AShooterCharacter::PlaySlideMontage()
@@ -584,7 +592,12 @@ void AShooterCharacter::EquipButtonPressed()
 {
 	if(Combat)
 	{
-		ServerEquipButtonPressed();
+		if(Combat->CombatState == ECombatState::ECState_Unoccupied) ServerEquipButtonPressed();
+		if(Combat->bShouldSwapWeapon() && !HasAuthority() && Combat->CombatState == ECombatState::ECState_Unoccupied && OverlappingWeapon == nullptr)
+		{
+			PlaySwapMontage();
+			Combat->CombatState = ECombatState::ECState_SwapWeapons;
+		}
 	}
 }
 void AShooterCharacter::CrouchButtonPressed()

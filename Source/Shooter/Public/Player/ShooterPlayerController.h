@@ -7,6 +7,7 @@
 #include "GameFramework/PlayerController.h"
 #include "ShooterPlayerController.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHighPingDelegate,bool,bPingTooHigh);
 
 class AShooterGameModeBase;
 class UHudOverlay;
@@ -55,6 +56,7 @@ public:
 	bool bDisableGameplay = false;
 
 	FORCEINLINE bool GetDisableGameplay() const {return bDisableGameplay;}
+	FHighPingDelegate HighPingDelegate;
 	
 protected:
 
@@ -155,6 +157,10 @@ private:
 	UPROPERTY(EditAnywhere)
 	float HighPingThreshold = 50.f;
 	float PingAnimationRunningTime = 0.f;
+
+	UFUNCTION(Server,Reliable)
+	void ServerReportPingStatus(bool bHighPing);
+	
 	
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputMappingContext> PlayerContext;
