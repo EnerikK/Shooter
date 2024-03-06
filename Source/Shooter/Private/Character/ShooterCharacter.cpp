@@ -597,6 +597,7 @@ void AShooterCharacter::EquipButtonPressed()
 		{
 			PlaySwapMontage();
 			Combat->CombatState = ECombatState::ECState_SwapWeapons;
+			bFinishedSwapping = false;
 		}
 	}
 }

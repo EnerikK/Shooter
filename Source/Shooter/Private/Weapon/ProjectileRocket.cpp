@@ -44,7 +44,7 @@ void AProjectileRocket::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 		if(FiringController)
 		{
 			UGameplayStatics::ApplyRadialDamageWithFalloff(this,
-				Damage,10.f,GetActorLocation(),200.f,500.f,
+				Damage,50,GetActorLocation(),200.f,500.f,
 				1.f,UDamageType::StaticClass(),TArray<AActor*>(),this,FiringController);
 		}
 	}

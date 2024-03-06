@@ -206,9 +206,9 @@ void UCombatComponent::FireTimerFinished()
 bool UCombatComponent::CanFire()
 {
 	if(EquippedWeapon == nullptr) return false;
-	if(bLocallyReloading) return false;
 	if(!EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECState_Reloading &&
 	EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun) return true;
+	if(bLocallyReloading) return false;
 	return !EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECState_Unoccupied;
 	
 }
@@ -304,6 +304,7 @@ void UCombatComponent::SwapWeapon()
 	if(CombatState != ECombatState::ECState_Unoccupied || Character == nullptr) return;
 	
 	Character->PlaySwapMontage();
+	Character->bFinishedSwapping = false;
 	CombatState = ECombatState::ECState_SwapWeapons;
 	
 	AWeapon* TempWeapon = EquippedWeapon;
@@ -502,6 +503,7 @@ void UCombatComponent::FinishSwap()
 	{
 		CombatState = ECombatState::ECState_Unoccupied;
 	}
+	if(Character) Character->bFinishedSwapping = true;
 }
 void UCombatComponent::FinishSwapAttachWeapon()
 {

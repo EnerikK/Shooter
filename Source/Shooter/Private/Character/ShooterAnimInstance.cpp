@@ -80,8 +80,8 @@ void UShooterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	}
 	bUseFabrik = Character->GetCombatState() == ECombatState::ECState_Unoccupied;
 	bool bFabrikOverride = Character->IsLocallyControlled() &&
-		Character->GetCombatState() != ECombatState::ECState_ThrowGrenade &&
-		Character->GetCombatState() != ECombatState::ECState_SwapWeapons;
+		Character->GetCombatState() != ECombatState::ECState_ThrowGrenade && 
+		Character->bFinishedSwapping;
 	if(bFabrikOverride)
 	{
 		bUseFabrik = !Character->IsLocallyReloading();

@@ -68,6 +68,7 @@ public:
 	bool IsWeaponEquipped();
 	bool IsAiming();
 	bool IsSliding();
+	bool bFinishedSwapping = false;
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowSniperScopeWidget(bool bShowScope);
 	void SpawnDefaultWeapon();
