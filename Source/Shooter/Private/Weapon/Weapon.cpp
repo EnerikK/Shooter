@@ -63,7 +63,6 @@ void AWeapon::BeginPlay()
 	{
 		PickUpWidget->SetVisibility(false);
 	}
-		
 }
 void AWeapon::Tick(float DeltaTime)
 {

@@ -7,7 +7,8 @@
 #include "GameFramework/PlayerController.h"
 #include "ShooterPlayerController.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHighPingDelegate,bool,bPingTooHigh);
+class UReturnToMainMenu;
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHighPingDelegate, bool, bPingTooHigh);
 
 class AShooterGameModeBase;
 class UHudOverlay;
@@ -160,7 +161,13 @@ private:
 
 	UFUNCTION(Server,Reliable)
 	void ServerReportPingStatus(bool bHighPing);
-	
+
+	UPROPERTY(EditAnywhere,Category="HUD")
+	TSubclassOf<UUserWidget> ReturnToMainMenuWidget;
+	UPROPERTY()
+	UReturnToMainMenu* ReturnToMainMenu;
+
+	bool bReturnToMainMenuOpen = false;
 	
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputMappingContext> PlayerContext;
@@ -198,6 +205,9 @@ private:
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> SlideAction;
 
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> QuitAction;
+
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void Jump(const FInputActionValue& Value);
@@ -209,6 +219,7 @@ private:
 	void Reload(const FInputActionValue& Value);
 	void Toss(const FInputActionValue& Value);
 	void Slide(const FInputActionValue& Value);
+	void Quit(const FInputActionValue& Value);
 
 
 };

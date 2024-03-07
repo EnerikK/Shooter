@@ -15,6 +15,7 @@
 #include "GameState/ShooterGameState.h"
 #include "Hud/Announcement.h"
 #include "Hud/HudOverlay.h"
+#include "Hud/ReturnToMainMenu.h"
 #include "Hud/ShooterHUD.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -518,6 +519,9 @@ void AShooterPlayerController::SetupInputComponent()
 	
 	EnhancedInputComponent->BindAction(
 	SlideAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Slide);
+
+	EnhancedInputComponent->BindAction(
+	QuitAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Quit);
 	
 }
 
@@ -669,6 +673,27 @@ void AShooterPlayerController::Slide(const FInputActionValue& Value)
 	if(ControlledCharacter)
 	{
 		ControlledCharacter->SlideButtonPressed();
+	}
+}
+
+void AShooterPlayerController::Quit(const FInputActionValue& Value)
+{
+	if(ReturnToMainMenuWidget == nullptr) return;
+	if(ReturnToMainMenu == nullptr)
+	{
+		ReturnToMainMenu = CreateWidget<UReturnToMainMenu>(this,ReturnToMainMenuWidget);
+	}
+	if(ReturnToMainMenu)
+	{
+		bReturnToMainMenuOpen = !bReturnToMainMenuOpen;
+		if(bReturnToMainMenuOpen)
+		{
+			ReturnToMainMenu->MenuSetUp();
+		}
+		else
+		{
+			ReturnToMainMenu->MenuTearDown();
+		}
 	}
 }
 	
