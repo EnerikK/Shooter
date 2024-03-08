@@ -79,8 +79,32 @@ void AShooterGameModeBase::PlayerElimination(AShooterCharacter* EliminatedCharac
 	
 	if(AttackerPlayerState && AttackerPlayerState != VictimPlayerState && ShooterGameState)
 	{
+		TArray<AShooterPlayerState*> PlatersCurrentlyInTheLead;
+		for(auto LeadPlayer : ShooterGameState->TopScoringPlayer)
+		{
+			PlatersCurrentlyInTheLead.Add(LeadPlayer);
+		}
 		AttackerPlayerState->AddToScore(1.f);
 		ShooterGameState->UpdateTopScore(AttackerPlayerState);
+		if(ShooterGameState->TopScoringPlayer.Contains(AttackerPlayerState))
+		{
+			AShooterCharacter* Leader = Cast<AShooterCharacter>(AttackerPlayerState->GetPawn());
+			if(Leader)
+			{
+				Leader->MulticastGainedTheLead();
+			}
+		}
+		for(int32 i = 0; i < PlatersCurrentlyInTheLead.Num(); i++)
+		{
+			if(!ShooterGameState->TopScoringPlayer.Contains(PlatersCurrentlyInTheLead[i]))
+			{
+				AShooterCharacter* Loser = Cast<AShooterCharacter>(PlatersCurrentlyInTheLead[i]->GetPawn());
+				if(Loser)
+				{
+					Loser->MulticastLostTheLead();
+				}
+			}
+		}
 	}
 	if(VictimPlayerState)
 	{
@@ -88,7 +112,7 @@ void AShooterGameModeBase::PlayerElimination(AShooterCharacter* EliminatedCharac
 	}
 	if(EliminatedCharacter)
 	{
-		EliminatedCharacter->Elim();
+		EliminatedCharacter->Elim(false);
 	}
 }
 void AShooterGameModeBase::RequestRespawn(ACharacter* EliminatedCharacter, AController* EliminatedController)
@@ -104,5 +128,19 @@ void AShooterGameModeBase::RequestRespawn(ACharacter* EliminatedCharacter, ACont
 		UGameplayStatics::GetAllActorsOfClass(this,APlayerStart::StaticClass(),PlayerStart);
 		int32 Selection = FMath::RandRange(0,PlayerStart.Num() - 1);
 		RestartPlayerAtPlayerStart(EliminatedController,PlayerStart[Selection]);
+	}
+}
+void AShooterGameModeBase::PlayerLeftGame(AShooterPlayerState* PlayerLeaving)
+{
+	if(PlayerLeaving == nullptr) return;
+	AShooterGameState* ShooterGameState = GetGameState<AShooterGameState>();
+	if(ShooterGameState && ShooterGameState->TopScoringPlayer.Contains(PlayerLeaving))
+	{
+		ShooterGameState->TopScoringPlayer.Remove(PlayerLeaving);
+	}
+	AShooterCharacter* CharacterLeaving = Cast<AShooterCharacter>(PlayerLeaving->GetPawn());
+	if(CharacterLeaving)
+	{
+		CharacterLeaving->Elim(true);
 	}
 }

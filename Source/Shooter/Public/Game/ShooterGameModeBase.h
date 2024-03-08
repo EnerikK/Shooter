@@ -6,6 +6,7 @@
 #include "GameFramework/GameMode.h"
 #include "ShooterGameModeBase.generated.h"
 
+class AShooterPlayerState;
 class AShooterPlayerController;
 class AShooterCharacter;
 
@@ -29,7 +30,9 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void PlayerElimination(AShooterCharacter* EliminatedCharacter,AShooterPlayerController* VictimController,AShooterPlayerController* AttackerController);
 	virtual void RequestRespawn(ACharacter* EliminatedCharacter,AController* EliminatedController);
-
+	
+	void PlayerLeftGame(AShooterPlayerState* PlayerLeaving);
+	
 	UPROPERTY(EditDefaultsOnly)
 	float InterventionTime = 3.f;
 

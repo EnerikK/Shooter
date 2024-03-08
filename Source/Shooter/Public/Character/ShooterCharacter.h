@@ -11,6 +11,8 @@
 #include "Shooter/Types/CombatState.h"
 #include "ShooterCharacter.generated.h"
 
+class UNiagaraComponent;
+class UNiagaraSystem;
 class ULagCompensationComponent;
 class UBoxComponent;
 class UBuffComponent;
@@ -21,6 +23,8 @@ class UCombatComponent;
 class AWeapon;
 class UCameraComponent;
 class USpringArmComponent;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLeftGame);
 
 UCLASS()
 class SHOOTER_API AShooterCharacter : public ACharacter,public IInteractInterface
@@ -49,9 +53,9 @@ public:
 	void UpdateHudShield();
 	void UpdateHudAmmo();
 	
-	void Elim();
+	void Elim(bool bPlayerLeftGame);
 	UFUNCTION(NetMulticast,Reliable)
-	void MulticastElim();
+	void MulticastElim(bool bPlayerLeftGame);
 	void RotateInPlace(float DeltaTime);
 	
 	void EquipButtonPressed();
@@ -147,6 +151,16 @@ public:
 	UPROPERTY(EditAnywhere)
 	TMap<FName,UBoxComponent*> HitCollisionBoxes;
 
+	UFUNCTION(Server,Reliable)
+	void ServerLeaveGame();
+
+	FOnLeftGame OnLeftGame;
+
+	UFUNCTION(NetMulticast,Reliable)
+	void MulticastGainedTheLead();
+	UFUNCTION(NetMulticast,Reliable)
+	void MulticastLostTheLead();
+
 protected:
 	
 	virtual void BeginPlay() override;
@@ -158,8 +172,6 @@ protected:
 	void PollInit();
 	void DropOrDestroyWeapon(AWeapon* Weapon);
 	void DropOrDestroyWeapons();
-	
-
 
 private:
 
@@ -201,6 +213,14 @@ private:
 
 	ETurnInPlace TurningInPlace;
 	void TurnInPlace(float DeltaTime);
+
+	/*Elim Effect*/
+
+	UPROPERTY(EditAnywhere)
+	UNiagaraSystem* CrownSystem;
+
+	UPROPERTY()
+	UNiagaraComponent* CrownComponent;
 
 	/*
 	 * Montages
@@ -286,6 +306,8 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 	float ElimDelay = 3.f;
 
+	bool bLeftGame = false;
+	
 	/*Grenade*/
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* AttachedGrenade;

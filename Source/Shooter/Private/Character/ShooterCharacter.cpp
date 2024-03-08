@@ -1,6 +1,9 @@
 // Hello :) 
 
 #include "Shooter/Public/Character/ShooterCharacter.h"
+
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/BuffComponent.h"
@@ -145,6 +148,32 @@ void AShooterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(AShooterCharacter,Health);
 	DOREPLIFETIME(AShooterCharacter,Shield);
 }
+void AShooterCharacter::MulticastGainedTheLead_Implementation()
+{
+	if(CrownSystem == nullptr) return;
+	if(CrownComponent == nullptr)
+	{
+		CrownComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			CrownSystem,
+			GetCapsuleComponent(),
+			FName(),
+			GetActorLocation() + FVector(0.f,0.f,100.f),
+			GetActorRotation(),
+			EAttachLocation::KeepWorldPosition,
+			false);
+	}
+	if(CrownComponent)
+	{
+		CrownComponent->Activate();
+	}
+}
+void AShooterCharacter::MulticastLostTheLead_Implementation()
+{
+	if(CrownComponent)
+	{
+		CrownComponent->DestroyComponent();
+	}
+}
 void AShooterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -160,7 +189,9 @@ void AShooterCharacter::BeginPlay()
 	{
 		AttachedGrenade->SetVisibility(false);
 	}
+	
 }
+
 void AShooterCharacter::UpdateHudHealth()
 {
 	ShooterPlayerController = ShooterPlayerController == nullptr ?  Cast<AShooterPlayerController>(Controller) : ShooterPlayerController;
@@ -186,11 +217,10 @@ void AShooterCharacter::UpdateHudAmmo()
 		ShooterPlayerController->SetHudWeaponAmmo(Combat->EquippedWeapon->GetAmmo());
 	}
 }
-void AShooterCharacter::Elim()
+void AShooterCharacter::Elim(bool bPlayerLeftGame)
 {
 	DropOrDestroyWeapons();
-	MulticastElim();
-	GetWorldTimerManager().SetTimer(ElimTimer,this,&AShooterCharacter::ElimTimerFinished,ElimDelay);
+	MulticastElim(bPlayerLeftGame);
 }
 void AShooterCharacter::DropOrDestroyWeapons()
 {
@@ -218,8 +248,9 @@ void AShooterCharacter::DropOrDestroyWeapon(AWeapon* Weapon)
 		Weapon->Dropped();
 	}
 }
-void AShooterCharacter::MulticastElim_Implementation()
+void AShooterCharacter::MulticastElim_Implementation(bool bPlayerLeftGame)
 {
+	bLeftGame = bPlayerLeftGame;
 	if(ShooterPlayerController)
 	{
 		ShooterPlayerController->SetHudWeaponAmmo(0);
@@ -253,6 +284,11 @@ void AShooterCharacter::MulticastElim_Implementation()
 	{
 		ShowSniperScopeWidget(false);
 	}
+	if(CrownComponent)
+	{
+		CrownComponent->DestroyComponent();
+	}
+	GetWorldTimerManager().SetTimer(ElimTimer,this,&AShooterCharacter::ElimTimerFinished,ElimDelay);
 }
 void AShooterCharacter::UpdateDissolveMaterial(float DissolveValue)
 {
@@ -273,13 +309,26 @@ void AShooterCharacter::StartDissolve()
 void AShooterCharacter::ElimTimerFinished()
 {
 	AShooterGameModeBase* ShooterGameMode = GetWorld()->GetAuthGameMode<AShooterGameModeBase>();
-	if(ShooterGameMode)
+	if(ShooterGameMode && !bLeftGame)
 	{
 		ShooterGameMode->RequestRespawn(this,Controller);
 	}
+	if(bLeftGame && IsLocallyControlled())
+	{
+		OnLeftGame.Broadcast();
+	}
 
 }
-
+void AShooterCharacter::ServerLeaveGame_Implementation()
+{
+	AShooterGameModeBase* ShooterGameMode = GetWorld()->GetAuthGameMode<AShooterGameModeBase>();
+	ShooterPlayerState = ShooterPlayerState == nullptr ? GetPlayerState<AShooterPlayerState>() : ShooterPlayerState;
+	if(ShooterGameMode && ShooterPlayerState)
+	{
+		ShooterGameMode->PlayerLeftGame(ShooterPlayerState);
+	}
+	
+}
 AWeapon* AShooterCharacter::GetEquippedWeapon()
 {
 	if(Combat == nullptr) return nullptr;
@@ -400,6 +449,12 @@ void AShooterCharacter::PollInit()
 		{
 			ShooterPlayerState->AddToScore(0.f);
 			ShooterPlayerState->AddToDefeats(0);
+			
+			AShooterGameState* ShooterGameState = Cast<AShooterGameState>(UGameplayStatics::GetGameState(this));
+			if(ShooterGameState && ShooterGameState->TopScoringPlayer.Contains(ShooterPlayerState))
+			{
+				MulticastGainedTheLead();
+			}
 		}
 	}
 }
