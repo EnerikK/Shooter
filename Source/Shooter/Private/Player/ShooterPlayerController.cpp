@@ -55,6 +55,42 @@ void AShooterPlayerController::Tick(float DeltaSeconds)
 	CheckPing(DeltaSeconds);
 	
 }
+void AShooterPlayerController::BroadcastKill(APlayerState* Attacker, APlayerState* Victim)
+{
+	ClientKillAnnouncement(Attacker,Victim);
+}
+void AShooterPlayerController::ClientKillAnnouncement_Implementation(APlayerState* Attacker, APlayerState* Victim)
+{
+	APlayerState* Self = GetPlayerState<APlayerState>();
+	if(Attacker && Victim && Self)
+	{
+		ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
+		if(ShooterHUD)
+		{
+			if(Attacker == Self && Victim != Self)
+			{
+				ShooterHUD->AddKillAnnouncement("You",Victim->GetPlayerName());
+				return;
+			}
+			if(Victim == Self && Attacker != Self)
+			{
+				ShooterHUD->AddKillAnnouncement(Attacker->GetPlayerName(),"you");
+				return;
+			}
+			if(Attacker == Victim && Attacker == Self)
+			{
+				ShooterHUD->AddKillAnnouncement("You","Yourself");
+				return;
+			}
+			if(Attacker == Victim && Attacker != Self)
+			{
+				ShooterHUD->AddKillAnnouncement(Attacker->GetPlayerName(),"Themselves");
+				return;
+			}
+			ShooterHUD->AddKillAnnouncement(Attacker->GetPlayerName(),Victim->GetPlayerName());
+		}
+	}
+}
 void AShooterPlayerController::CheckPing(float DeltaSeconds)
 {
 	HighPingRunningTime += DeltaSeconds;

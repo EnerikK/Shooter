@@ -58,6 +58,8 @@ public:
 
 	FORCEINLINE bool GetDisableGameplay() const {return bDisableGameplay;}
 	FHighPingDelegate HighPingDelegate;
+
+	void BroadcastKill(APlayerState* Attacker,APlayerState* Victim);
 	
 protected:
 
@@ -99,6 +101,9 @@ protected:
 	void StopHighPingWarning();
 
 	void CheckPing(float DeltaSeconds);
+
+	UFUNCTION(Client,Reliable)
+	void ClientKillAnnouncement(APlayerState* Attacker,APlayerState* Victim);
 private:
 
 	UPROPERTY()

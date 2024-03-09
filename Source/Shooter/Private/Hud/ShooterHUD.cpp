@@ -3,9 +3,13 @@
 
 #include "Hud/ShooterHUD.h"
 #include "Blueprint/UserWidget.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
+#include "Components/CanvasPanelSlot.h"
+#include "Components/HorizontalBox.h"
 #include "GameFramework/PlayerController.h"
 #include "Hud/Announcement.h"
 #include "Hud/HudOverlay.h"
+#include "Hud/KillAnnouncement.h"
 
 void AShooterHUD::BeginPlay()
 {
@@ -30,6 +34,45 @@ void AShooterHUD::AddAnnouncement()
 		Announcement->AddToViewport();
 	}
 	
+}
+void AShooterHUD::AddKillAnnouncement(FString Attacker,FString Victim)
+{
+	OwningPlayer = OwningPlayer == nullptr ? GetOwningPlayerController() : OwningPlayer;
+	if(OwningPlayer && KillAnnouncementClass)
+	{
+		UKillAnnouncement* KillAnnouncementWidget = CreateWidget<UKillAnnouncement>(OwningPlayer,KillAnnouncementClass);
+		if(KillAnnouncementWidget)
+		{
+			KillAnnouncementWidget->SetKillAnnouncementText(Attacker,Victim);
+			KillAnnouncementWidget->AddToViewport();
+			for(auto Message : KillMessages)
+			{
+				if(Message && Message->AnnouncementBox)
+				{
+					UCanvasPanelSlot* CanvasSlot = UWidgetLayoutLibrary::SlotAsCanvasSlot(Message->AnnouncementBox);
+					if(CanvasSlot)
+					{
+						FVector2D Position = CanvasSlot->GetPosition();
+						FVector2D NewPosition(CanvasSlot->GetPosition().X,Position.Y - CanvasSlot->GetSize().Y);
+						CanvasSlot->SetPosition(NewPosition);
+					}
+				}
+			}
+			KillMessages.Add(KillAnnouncementWidget);
+			
+			FTimerHandle KillMessageTimer;
+			FTimerDelegate KillMessageDelegate;
+			KillMessageDelegate.BindUFunction(this,FName("KillAnnouncementTimerFinished"),KillAnnouncementWidget);
+			GetWorldTimerManager().SetTimer(KillMessageTimer,KillMessageDelegate,KillAnnouncementTime,false); 
+		}
+	}
+}
+void AShooterHUD::KillAnnouncementTimerFinished(UKillAnnouncement* MessageToRemove)
+{
+	if(MessageToRemove)
+	{
+		MessageToRemove->RemoveFromParent();
+	}
 }
 void AShooterHUD::DrawHUD()
 {
@@ -90,3 +133,4 @@ void AShooterHUD::DrawCrosshair(UTexture2D* Texture, FVector2d ViewportCenter,FV
 		CrosshairColor
 	);
 }
+
