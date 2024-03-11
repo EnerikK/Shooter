@@ -10,7 +10,7 @@ void AShooterPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AShooterPlayerState,Defeats);
-	
+	DOREPLIFETIME(AShooterPlayerState,Team);
 }
 void AShooterPlayerState::AddToScore(float ScoreAmount)
 {
@@ -52,7 +52,23 @@ void AShooterPlayerState::AddToDefeats(int32 DefeatsAmount)
 		}
 	}
 }
-
+void AShooterPlayerState::SetTeam(ETeam TeamToSet)
+{
+	Team = TeamToSet;
+	AShooterCharacter* ShooterCharacter = Cast<AShooterCharacter>(GetPawn());
+	if(ShooterCharacter)
+	{
+		ShooterCharacter->SetTeamColor(Team);
+	}
+}
+void AShooterPlayerState::OnRep_Team()
+{
+	AShooterCharacter* ShooterCharacter = Cast<AShooterCharacter>(GetPawn());
+	if(ShooterCharacter)
+	{
+		ShooterCharacter->SetTeamColor(Team);
+	}
+}
 void AShooterPlayerState::OnRep_Defeats()
 {
 

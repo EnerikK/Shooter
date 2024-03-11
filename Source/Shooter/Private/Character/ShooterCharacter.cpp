@@ -279,6 +279,7 @@ void AShooterCharacter::MulticastElim_Implementation(bool bPlayerLeftGame)
 	//Disable Collision
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	if(IsLocallyControlled() && Combat && Combat->bAiming && Combat->EquippedWeapon && Combat->EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Sniper)
 	{
@@ -411,7 +412,7 @@ void AShooterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const 
 	if(bIsElimmed) return;
 
 	float DamageToHealth = Damage;
-	if(Shield > 0)
+	if(Shield > 0.f)
 	{
 		if(Shield >= Damage)
 		{
@@ -420,8 +421,8 @@ void AShooterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const 
 		}
 		else
 		{
-			Shield = 0.f;
 			DamageToHealth = FMath::Clamp(DamageToHealth - Shield,0.f,Damage);
+			Shield = 0.f;
 		}
 	}
 	Health = FMath::Clamp(Health - DamageToHealth,0.f,MaxHealth);
@@ -449,6 +450,7 @@ void AShooterCharacter::PollInit()
 		{
 			ShooterPlayerState->AddToScore(0.f);
 			ShooterPlayerState->AddToDefeats(0);
+			SetTeamColor(ShooterPlayerState->GetTeam());
 			
 			AShooterGameState* ShooterGameState = Cast<AShooterGameState>(UGameplayStatics::GetGameState(this));
 			if(ShooterGameState && ShooterGameState->TopScoringPlayer.Contains(ShooterPlayerState))
@@ -643,6 +645,25 @@ void AShooterCharacter::SpawnDefaultWeapon()
 		}
 	}
 }
+void AShooterCharacter::SetTeamColor(ETeam Team)
+{
+	if(GetMesh() == nullptr || OriginalMaterial == nullptr) return;
+	switch (Team)
+	{
+	case ETeam::ET_NoTeam:
+		GetMesh()->SetMaterial(0,OriginalMaterial);
+		DissolveMaterialInstance = BlueDissolveMaterialInstance;
+		break;
+	case ETeam::ET_BlueTeam:
+		GetMesh()->SetMaterial(0,BlueMaterial);
+		DissolveMaterialInstance = BlueDissolveMaterialInstance;
+		break;
+	case ETeam::ET_RedTeam:
+		GetMesh()->SetMaterial(0,RedMaterial);
+		DissolveMaterialInstance = RedDissolveMaterialInstance;
+		break;
+	}
+}
 void AShooterCharacter::EquipButtonPressed()
 {
 	if(Combat)
@@ -771,6 +792,10 @@ void AShooterCharacter::HideCamera()
 		{
 			Combat->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = true;
 		}
+		if(Combat && Combat->SecondaryWeapon && Combat->SecondaryWeapon->GetWeaponMesh())
+		{
+			Combat->SecondaryWeapon->GetWeaponMesh()->bOwnerNoSee = true;
+		}
 	}
 	else
 	{
@@ -778,6 +803,10 @@ void AShooterCharacter::HideCamera()
 		if(Combat && Combat->EquippedWeapon && Combat->EquippedWeapon->GetWeaponMesh())
 		{
 			Combat->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false;
+		}
+		if(Combat && Combat->SecondaryWeapon && Combat->SecondaryWeapon->GetWeaponMesh())
+		{
+			Combat->SecondaryWeapon->GetWeaponMesh()->bOwnerNoSee = false;
 		}
 	}
 }

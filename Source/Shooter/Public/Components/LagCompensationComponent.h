@@ -100,8 +100,7 @@ public:
 		AShooterCharacter* HitCharacter ,
 		const FVector_NetQuantize& TraceStart,
 		const FVector_NetQuantize& HitLocation,
-		float HitTime,
-		AWeapon* DamageCauser);
+		float HitTime);
 	/*Projectile*/
 	UFUNCTION(Server,Reliable)
 	void ProjectileServerScoreRequest(

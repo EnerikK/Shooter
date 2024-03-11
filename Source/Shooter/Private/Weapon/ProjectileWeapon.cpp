@@ -33,6 +33,7 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 					SpawnProjectile = World->SpawnActor<AProjectile>(Projectile,SocketTransform.GetLocation(),TargetRotation,SpawnParameters);
 					SpawnProjectile->bUseServerSideRewind = false;
 					SpawnProjectile->Damage = Damage;
+					SpawnProjectile->HeadShotDamage = HeadShotDamage;
 				}
 				else // Server Not locally controlled - spawn non replicated projectile no ssr
 				{
@@ -63,6 +64,7 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 				SpawnProjectile = World->SpawnActor<AProjectile>(Projectile,SocketTransform.GetLocation(),TargetRotation,SpawnParameters);
 				SpawnProjectile->bUseServerSideRewind = false;
 				SpawnProjectile->Damage = Damage;
+				SpawnProjectile->HeadShotDamage = HeadShotDamage;
 			}	
 		}
 	}

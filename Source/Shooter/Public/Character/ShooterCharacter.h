@@ -9,6 +9,7 @@
 #include "Interface/InteractInterface.h"
 #include "Shooter/Types/TurnInPlace.h"
 #include "Shooter/Types/CombatState.h"
+#include "Shooter/Types/Team.h"
 #include "ShooterCharacter.generated.h"
 
 class UNiagaraComponent;
@@ -76,6 +77,7 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowSniperScopeWidget(bool bShowScope);
 	void SpawnDefaultWeapon();
+	void SetTeamColor(ETeam Team);
 	
 	FORCEINLINE float GetAO_Yaw() const {return AO_Yaw;}
 	FORCEINLINE float GetAO_Pitch() const {return  AO_Pitch;}
@@ -292,11 +294,27 @@ private:
 	UMaterialInstanceDynamic* DynamicDissolveMaterialInstance;
 
 	//Material instance set on the BP used with the dynamic material instance
-	UPROPERTY(EditAnywhere,Category="Elimination")
+	UPROPERTY(VisibleAnywhere,Category="Elimination")
 	UMaterialInstance* DissolveMaterialInstance;
 
 	UPROPERTY(EditAnywhere)
 	UCurveFloat* DissolveCurve;
+
+	/*TeamColors*/
+	UPROPERTY(EditAnywhere,Category="Elimination")
+	UMaterialInstance* RedDissolveMaterialInstance;
+
+	UPROPERTY(EditAnywhere,Category="Elimination")
+	UMaterialInstance* RedMaterial;
+
+	UPROPERTY(EditAnywhere,Category="Elimination")
+	UMaterialInstance* BlueMaterial;
+	
+	UPROPERTY(EditAnywhere,Category="Elimination")
+	UMaterialInstance* BlueDissolveMaterialInstance;
+
+	UPROPERTY(EditAnywhere,Category="Elimination")
+	UMaterialInstance* OriginalMaterial;
 
 	//Timer
 	FTimerHandle ElimTimer;

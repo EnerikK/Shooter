@@ -296,6 +296,7 @@ void UCombatComponent::LocalShotgunFire(const TArray<FVector_NetQuantize>& Trace
 	if(Shotgun == nullptr || Character == nullptr) return;
 	if(CombatState == ECombatState::ECState_Reloading || CombatState == ECombatState::ECState_Unoccupied)
 	{
+		bLocallyReloading = false;
 		Character->PlayFireMontage(bAiming);
 		Shotgun->FireShotgun(TraceHitTarget);
 		CombatState = ECombatState::ECState_Unoccupied;
@@ -320,15 +321,11 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 }
 void UCombatComponent::SwapWeapon()
 {
-	if(CombatState != ECombatState::ECState_Unoccupied || Character == nullptr) return;
+	if(CombatState != ECombatState::ECState_Unoccupied || Character == nullptr || !Character->HasAuthority()) return;
 	
 	Character->PlaySwapMontage();
-	Character->bFinishedSwapping = false;
 	CombatState = ECombatState::ECState_SwapWeapons;
-	
-	AWeapon* TempWeapon = EquippedWeapon;
-	EquippedWeapon = SecondaryWeapon;
-	SecondaryWeapon = TempWeapon;
+	Character->bFinishedSwapping = false;
 }
 bool UCombatComponent::bShouldSwapWeapon()
 {
@@ -526,6 +523,11 @@ void UCombatComponent::FinishSwap()
 }
 void UCombatComponent::FinishSwapAttachWeapon()
 {
+	
+	AWeapon* TempWeapon = EquippedWeapon;
+	EquippedWeapon = SecondaryWeapon;
+	SecondaryWeapon = TempWeapon;
+	
 	EquippedWeapon->SetWeaponState(EWeaponState::EW_Equipped);
 	AttachActorToRightHand(EquippedWeapon);
 	EquippedWeapon->SetHudAmmo();
