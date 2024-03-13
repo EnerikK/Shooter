@@ -18,13 +18,17 @@ class SHOOTER_API AShooterGameState : public AGameState
 
 public:
 
-	virtual auto GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const -> void override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	void UpdateTopScore(AShooterPlayerState* ScoringPlayer);
 	
 	UPROPERTY(Replicated)
 	TArray<AShooterPlayerState*> TopScoringPlayer;
 	
 	/*Teams*/
+	
+	void RedTeamScores();
+	void BlueTeamScores();
+	
 	TArray<AShooterPlayerState*> RedTeam;
 	TArray<AShooterPlayerState*> BlueTeam;
 

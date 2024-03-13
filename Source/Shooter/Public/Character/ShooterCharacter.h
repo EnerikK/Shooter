@@ -12,6 +12,7 @@
 #include "Shooter/Types/Team.h"
 #include "ShooterCharacter.generated.h"
 
+class AShooterGameModeBase;
 class UNiagaraComponent;
 class UNiagaraSystem;
 class ULagCompensationComponent;
@@ -334,4 +335,7 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeapon> DefaultWeaponClass;
+
+	UPROPERTY()
+	AShooterGameModeBase* ShooterGameMode;
 };

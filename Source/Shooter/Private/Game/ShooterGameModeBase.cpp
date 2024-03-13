@@ -16,7 +16,6 @@ namespace MatchState
 AShooterGameModeBase::AShooterGameModeBase()
 {
 	bDelayedStart = true;
-	
 }
 void AShooterGameModeBase::BeginPlay()
 {
@@ -33,7 +32,7 @@ void AShooterGameModeBase::OnMatchStateSet()
 		AShooterPlayerController* ShooterPlayer = Cast<AShooterPlayerController>(*Iterator);
 		if(ShooterPlayer)
 		{
-			ShooterPlayer->OnMatchStateSet(MatchState);	
+			ShooterPlayer->OnMatchStateSet(MatchState,bTeamsMatch);	
 		}
 	}
 	
@@ -151,4 +150,8 @@ void AShooterGameModeBase::PlayerLeftGame(AShooterPlayerState* PlayerLeaving)
 	{
 		CharacterLeaving->Elim(true);
 	}
+}
+float AShooterGameModeBase::CalculateDamage(AController* Attacker, AController* Victim, float BaseDamage)
+{
+	return BaseDamage;
 }

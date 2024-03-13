@@ -73,7 +73,7 @@ void AShooterPlayerState::OnRep_Defeats()
 {
 
 	Character = Character == nullptr ? Cast<AShooterCharacter>(GetPawn()) : Character;
-	if(Character && Character->Controller)
+	if(Character)
 	{
 		Controller = Controller == nullptr ? Cast<AShooterPlayerController>(Character->Controller) : Controller;
 		if(Controller)

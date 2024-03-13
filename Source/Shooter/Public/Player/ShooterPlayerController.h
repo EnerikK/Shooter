@@ -7,6 +7,8 @@
 #include "GameFramework/PlayerController.h"
 #include "ShooterPlayerController.generated.h"
 
+class AShooterGameState;
+class AShooterPlayerState;
 class UReturnToMainMenu;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHighPingDelegate, bool, bPingTooHigh);
 
@@ -43,12 +45,17 @@ public:
 	void SetHudMatchCountdown(float CountdownTime);
 	void SetHudAnnouncementCountdown(float CountdownTime);
 	void SetHudGrenades(int32 Grenades);
+	void SetHudRedTeamScore(int32 RedScore);
+	void SetHudBlueTeamScore(int32 BlueScore);
 
 	virtual float GetServerTime(); //Sync with server world clock
 	virtual void ReceivedPlayer() override; //Sync With server clock as soon as possilbe
-	void OnMatchStateSet(FName State);
-	void HandleMatchHasStarted();
+	void OnMatchStateSet(FName State,bool bTeamsMatch = false);
+	void HandleMatchHasStarted(bool bTeamsMatch = false);
 	void HandleCooldown();
+	void HideTeamScores();
+	void InitTeamScores();
+	
 
 	UPROPERTY()
 	float SingleTripTime = 0.f;
@@ -60,6 +67,13 @@ public:
 	FHighPingDelegate HighPingDelegate;
 
 	void BroadcastKill(APlayerState* Attacker,APlayerState* Victim);
+
+	
+	UPROPERTY(ReplicatedUsing = OnRep_ShowTeamScores)
+	bool bShowTeamScores = false;
+
+	UFUNCTION()
+	void OnRep_ShowTeamScores();
 	
 protected:
 
@@ -104,6 +118,10 @@ protected:
 
 	UFUNCTION(Client,Reliable)
 	void ClientKillAnnouncement(APlayerState* Attacker,APlayerState* Victim);
+
+	FString GetInfoText(const TArray<AShooterPlayerState*>& Players);
+	FString GetTeamsInfoText(AShooterGameState* ShooterGameState);
+
 private:
 
 	UPROPERTY()

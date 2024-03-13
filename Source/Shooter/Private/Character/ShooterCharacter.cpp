@@ -309,7 +309,7 @@ void AShooterCharacter::StartDissolve()
 }
 void AShooterCharacter::ElimTimerFinished()
 {
-	AShooterGameModeBase* ShooterGameMode = GetWorld()->GetAuthGameMode<AShooterGameModeBase>();
+	ShooterGameMode =  ShooterGameMode == nullptr ?  GetWorld()->GetAuthGameMode<AShooterGameModeBase>() : ShooterGameMode;
 	if(ShooterGameMode && !bLeftGame)
 	{
 		ShooterGameMode->RequestRespawn(this,Controller);
@@ -322,7 +322,8 @@ void AShooterCharacter::ElimTimerFinished()
 }
 void AShooterCharacter::ServerLeaveGame_Implementation()
 {
-	AShooterGameModeBase* ShooterGameMode = GetWorld()->GetAuthGameMode<AShooterGameModeBase>();
+	ShooterGameMode =  ShooterGameMode == nullptr ?  GetWorld()->GetAuthGameMode<AShooterGameModeBase>() : ShooterGameMode;
+
 	ShooterPlayerState = ShooterPlayerState == nullptr ? GetPlayerState<AShooterPlayerState>() : ShooterPlayerState;
 	if(ShooterGameMode && ShooterPlayerState)
 	{
@@ -409,7 +410,10 @@ void AShooterCharacter::AimOffset(float DeltaTime)
 void AShooterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
 	AController* InstigatorController, AActor* DamageCauser)
 {
-	if(bIsElimmed) return;
+	ShooterGameMode =  ShooterGameMode == nullptr ?  GetWorld()->GetAuthGameMode<AShooterGameModeBase>() : ShooterGameMode;
+	if(bIsElimmed || ShooterGameMode == nullptr) return;
+	Damage = ShooterGameMode->CalculateDamage(InstigatorController,Controller,Damage);
+
 
 	float DamageToHealth = Damage;
 	if(Shield > 0.f)
@@ -432,7 +436,6 @@ void AShooterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const 
 
 	if(Health  == 0.f)
 	{
-		AShooterGameModeBase* ShooterGameMode = GetWorld()->GetAuthGameMode<AShooterGameModeBase>();
 		if(ShooterGameMode)
 		{
 			ShooterPlayerController = ShooterPlayerController == nullptr ? Cast<AShooterPlayerController>(Controller) : ShooterPlayerController;
@@ -488,7 +491,7 @@ void AShooterCharacter::Destroyed()
 {
 	Super::Destroyed();
 	
-	AShooterGameModeBase* ShooterGameMode = Cast<AShooterGameModeBase>(UGameplayStatics::GetGameMode(this));
+	ShooterGameMode =  ShooterGameMode == nullptr ?  GetWorld()->GetAuthGameMode<AShooterGameModeBase>() : ShooterGameMode;
 	bool bMatchNotInProgress = ShooterGameMode && ShooterGameMode->GetMatchState() != MatchState::InProgress;
 	
 	if(Combat && Combat->EquippedWeapon && bMatchNotInProgress)
@@ -633,7 +636,7 @@ bool AShooterCharacter::IsSliding()
 
 void AShooterCharacter::SpawnDefaultWeapon()
 {
-	AShooterGameModeBase* ShooterGameMode = Cast<AShooterGameModeBase>(UGameplayStatics::GetGameMode(this));
+	ShooterGameMode =  ShooterGameMode == nullptr ?  GetWorld()->GetAuthGameMode<AShooterGameModeBase>() : ShooterGameMode;
 	UWorld* World = GetWorld();
 	if(ShooterGameMode && World && !bIsElimmed && DefaultWeaponClass)
 	{

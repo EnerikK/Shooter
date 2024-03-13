@@ -32,6 +32,8 @@ public:
 	virtual void RequestRespawn(ACharacter* EliminatedCharacter,AController* EliminatedController);
 	
 	void PlayerLeftGame(AShooterPlayerState* PlayerLeaving);
+
+	virtual  float CalculateDamage(AController* Attacker , AController* Victim,float BaseDamage);
 	
 	UPROPERTY(EditDefaultsOnly)
 	float InterventionTime = 3.f;
@@ -45,6 +47,8 @@ public:
 	float LevelStartingTime = 0.f;
 
 	FORCEINLINE float GetCountdownTime() const {return CountdownTime;}
+
+	bool bTeamsMatch = false;
 
 protected:
 	
