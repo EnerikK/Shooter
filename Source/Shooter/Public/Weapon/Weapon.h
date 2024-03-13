@@ -26,7 +26,6 @@ enum class EWeaponState : uint8
 	EW_EquippedSecondary	UMETA(DisplayName = "EquippedSecondary"),
 	
 	EW_MAX					UMETA(DisplayName = "DefaultMAX")
-	
 };
 UENUM(BlueprintType)
 enum class EFireType : uint8
@@ -36,9 +35,6 @@ enum class EFireType : uint8
 	EF_Shotgun		UMETA(DisplayName = "Shotgun Weapon"),
 	
 	EF_MAX			UMETA(DisplayName = "DefaultMAX")
-
-
-
 };
 
 UCLASS()
@@ -55,13 +51,14 @@ public:
 	virtual void OnRep_Owner() override;
 	virtual void Fire(const FVector& HitTarget);
 	FVector TraceEndWithScatter(const FVector& HitTarget);
-	void Dropped();
+	virtual void Dropped();
 	void SetHudAmmo();
 	void AddAmmo(int32 AmmoToAdd);
 	void SetWeaponState(EWeaponState State);
 	
 	FORCEINLINE USphereComponent* GetPickUpSphere() const {return PickUpSphere;}
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh()const {return WeaponMesh;}
+	FORCEINLINE UWidgetComponent* GetPickUpWidget() const {return PickUpWidget;}
 	FORCEINLINE float GetZoomedPov() const {return ZoomPOV;}
 	FORCEINLINE float GetZoomInterpPov() const {return ZoomInterpSpeed;}
 	FORCEINLINE EWeaponType GetWeaponType() const {return WeaponType;}

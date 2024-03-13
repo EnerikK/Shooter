@@ -219,8 +219,8 @@ void AShooterCharacter::UpdateHudAmmo()
 }
 void AShooterCharacter::Elim(bool bPlayerLeftGame)
 {
-	DropOrDestroyWeapons();
 	MulticastElim(bPlayerLeftGame);
+	DropOrDestroyWeapons();
 }
 void AShooterCharacter::DropOrDestroyWeapons()
 {
@@ -233,6 +233,10 @@ void AShooterCharacter::DropOrDestroyWeapons()
 		if(Combat->SecondaryWeapon)
 		{
 			DropOrDestroyWeapon(Combat->SecondaryWeapon);
+		}
+		if(Combat->TheFlag)
+		{
+			Combat->TheFlag->Dropped();
 		}
 	}
 }
@@ -354,6 +358,13 @@ void AShooterCharacter::Tick(float DeltaTime)
 }
 void AShooterCharacter::RotateInPlace(float DeltaTime)
 {
+	if(Combat && Combat->bHoldingFlag)
+	{
+		bUseControllerRotationYaw = false;
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+		TurningInPlace = ETurnInPlace::ETurnIP_NotTurning;
+		return;
+	}
 	if(ShooterPlayerController)
 	{
 		if(ShooterPlayerController->bDisableGameplay)
@@ -361,16 +372,13 @@ void AShooterCharacter::RotateInPlace(float DeltaTime)
 			bUseControllerRotationYaw = false;
 			TurningInPlace = ETurnInPlace::ETurnIP_NotTurning;
 			return;
-			
 		}
 	}
 	AimOffset(DeltaTime);
-	
 }
 
 void AShooterCharacter::AimOffset(float DeltaTime)
 {
-	
 	//There's a Bug on the Yaw when you use it on Multiplayer Fix when you can if  you can future me
 	if (Combat && Combat->EquippedWeapon == nullptr) return;
 	FVector Velocity = GetVelocity();
@@ -671,6 +679,7 @@ void AShooterCharacter::EquipButtonPressed()
 {
 	if(Combat)
 	{
+		if(Combat->bHoldingFlag) return;
 		if(Combat->CombatState == ECombatState::ECState_Unoccupied) ServerEquipButtonPressed();
 		if(Combat->bShouldSwapWeapon() && !HasAuthority() && Combat->CombatState == ECombatState::ECState_Unoccupied && OverlappingWeapon == nullptr)
 		{
@@ -682,6 +691,7 @@ void AShooterCharacter::EquipButtonPressed()
 }
 void AShooterCharacter::CrouchButtonPressed()
 {
+	if(Combat && Combat->bHoldingFlag) return;
 	if(bIsCrouched)
 	{
 		UnCrouch();
@@ -693,17 +703,19 @@ void AShooterCharacter::CrouchButtonPressed()
 }
 void AShooterCharacter::AimButtonPressed()
 {
+	
 	if(Combat)
 	{
+		if(Combat->bHoldingFlag) return;
 		Combat->SetAiming(true);
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Holding!"));	
-		
 	}
 }
 void AShooterCharacter::AimButtonReleased()
 {
 	if(Combat)
 	{
+		if(Combat->bHoldingFlag) return;
 		Combat->SetAiming(false);
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Released!"));	
 	}
@@ -712,6 +724,7 @@ void AShooterCharacter::FireButtonPressed()
 {
 	if(Combat)
 	{
+		if(Combat->bHoldingFlag) return;
 		Combat->FireButtonPressed(true);
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Firing!"));	
 	}
@@ -720,6 +733,7 @@ void AShooterCharacter::FireButtonReleased()
 {
 	if(Combat)
 	{
+		if(Combat->bHoldingFlag) return;
 		Combat->FireButtonPressed(false);
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Stopped!"));	
 
@@ -729,15 +743,16 @@ void AShooterCharacter::ReloadButtonPressed()
 {
 	if(Combat)
 	{
+		if(Combat->bHoldingFlag) return;
 		Combat->Reload();
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Reloading!"));	
-
 	}
 }
 void AShooterCharacter::GrenadeButtonPressed()
 {
 	if(Combat)
 	{
+		if(Combat->bHoldingFlag) return;
 		Combat->ThrowGrenade();
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("LEEEEEROYYYYYYY!"));	
 	}
@@ -747,6 +762,7 @@ void AShooterCharacter::SlideButtonPressed()
 {
 	if(Combat)
 	{
+		if(Combat->bHoldingFlag) return;
 		Combat->SlideButtonPressed(true);
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Sliding!"));	
 	}
@@ -847,6 +863,11 @@ void AShooterCharacter::ServerEquipButtonPressed_Implementation()
 void AShooterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
+bool AShooterCharacter::IsHoldingFlag() const
+{
+	if(Combat == nullptr) return false;
+	return Combat->bHoldingFlag;
 }
 ECombatState AShooterCharacter::GetCombatState() const
 {

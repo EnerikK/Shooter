@@ -37,6 +37,7 @@ void UShooterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	bAiming = Character->IsAiming();
 	TurningInPlace = Character->GetTurningInPlace();
 	bIsElimmed = Character->IsElimmed();
+	bHoldingFlag = Character->IsHoldingFlag();
 
 	//OffSet for strafing
 	FRotator AimRotation = Character->GetBaseAimRotation();

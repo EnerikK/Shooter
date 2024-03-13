@@ -31,6 +31,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	FORCEINLINE int32 GetGrenades() const {return Grenades;}
+	FORCEINLINE bool GetHoldingFlag() const {return bHoldingFlag;}
 	bool bShouldSwapWeapon();
 
 	void EquipWeapon(AWeapon* WeaponToEquip);
@@ -64,6 +65,12 @@ public:
 	void PickUpAmmo(EWeaponType WeaponType, int32 AmmoAmount);
 
 	bool bLocallyReloading = false;
+
+	UPROPERTY(ReplicatedUsing = OnRep_HoldingFlag)
+	bool bHoldingFlag = false;
+
+	UFUNCTION()
+	void OnRep_HoldingFlag();
 protected:
 
 	virtual void BeginPlay() override;
@@ -119,6 +126,7 @@ protected:
 	void DropEquippedWeapon();
 	void AttachActorToRightHand(AActor* ActorToAttach);
 	void AttachActorToLeftHand(AActor* ActorToAttach);
+	void AttachFlagToLeftHand(AWeapon* Flag);
 	void AttachActorToBackPack(AActor* ActorToAttach);
 	void UpdateCarriedAmmo();
 	void PlayEquippedSound(AWeapon* WeaponToEquip);
@@ -126,7 +134,8 @@ protected:
 	void ShowAttachedGrenade(bool bShowGrenade);
 	void EquipPrimaryWeapon(AWeapon* WeaponToEquip);
 	void EquipSecondaryWeapon(AWeapon* WeaponToEquip);
-	
+
+
 
 	
 private:
@@ -259,8 +268,9 @@ private:
 	
 	UPROPERTY(EditAnywhere)
 	int32 MaxGrenades = 4;
-
+	
 	void UpdateHudGrenades();
 	
-	
+	UPROPERTY()
+	AWeapon* TheFlag;
 };

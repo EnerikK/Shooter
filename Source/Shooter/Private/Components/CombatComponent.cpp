@@ -52,8 +52,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(UCombatComponent,CombatState);
 	DOREPLIFETIME_CONDITION(UCombatComponent,CarriedAmmo,COND_OwnerOnly);
 	DOREPLIFETIME(UCombatComponent,Grenades);
-
-	
+	DOREPLIFETIME(UCombatComponent,bHoldingFlag);
 }
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
@@ -307,17 +306,30 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 {
 	if(Character == nullptr || WeaponToEquip == nullptr) return;
 	if(CombatState != ECombatState::ECState_Unoccupied) return;
-	if(EquippedWeapon != nullptr && SecondaryWeapon == nullptr)
+	
+	if(WeaponToEquip->GetWeaponType() == EWeaponType::EWT_Flag)
 	{
-		EquipSecondaryWeapon(WeaponToEquip);
+		Character->Crouch();
+		bHoldingFlag = true;
+		WeaponToEquip->SetWeaponState(EWeaponState::EW_Equipped);
+		AttachFlagToLeftHand(WeaponToEquip);
+		WeaponToEquip->SetOwner(Character);
+		TheFlag = WeaponToEquip;
 	}
 	else
 	{
-		EquipPrimaryWeapon(WeaponToEquip);
+		if(EquippedWeapon != nullptr && SecondaryWeapon == nullptr)
+		{
+			EquipSecondaryWeapon(WeaponToEquip);
+		}
+		else
+		{
+			EquipPrimaryWeapon(WeaponToEquip);
+		}
 	}
-	
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
+
 }
 void UCombatComponent::SwapWeapon()
 {
@@ -411,6 +423,16 @@ void UCombatComponent::AttachActorToLeftHand(AActor* ActorToAttach)
 	if(HandSocket)
 	{
 		HandSocket->AttachActor(ActorToAttach,Character->GetMesh());
+	}
+}
+
+void UCombatComponent::AttachFlagToLeftHand(AWeapon* Flag)
+{
+	if(Character == nullptr || Character->GetMesh() == nullptr || Flag == nullptr) return;
+	const USkeletalMeshSocket* HandSocket = Character->GetMesh()->GetSocketByName(FName("FlagSocket"));
+	if(HandSocket)
+	{
+		HandSocket->AttachActor(Flag,Character->GetMesh());
 	}
 }
 void UCombatComponent::AttachActorToBackPack(AActor* ActorToAttach)
@@ -673,6 +695,13 @@ void UCombatComponent::UpdateShotgunAmmoValues()
 void UCombatComponent::OnRep_Grenades()
 {
 	UpdateHudGrenades();
+}
+void UCombatComponent::OnRep_HoldingFlag()
+{
+	if(bHoldingFlag && Character && Character->IsLocallyControlled())
+	{
+		Character->Crouch();
+	}
 }
 void UCombatComponent::UpdateHudGrenades()
 {

@@ -31,8 +31,8 @@ void AShooterPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
 	DOREPLIFETIME(AShooterPlayerController,MatchState);
-	DOREPLIFETIME(AShooterPlayerController,bDisableGameplay);
 	DOREPLIFETIME(AShooterPlayerController,bShowTeamScores);
+	DOREPLIFETIME(AShooterPlayerController,bDisableGameplay);
 }
 void AShooterPlayerController::BeginPlay()
 {

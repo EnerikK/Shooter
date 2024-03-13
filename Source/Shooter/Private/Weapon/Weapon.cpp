@@ -142,7 +142,6 @@ void AWeapon::SetWeaponState(EWeaponState State)
 {
 	WeaponState = State;
 	OnWeaponStateSet();
-	
 }
 void AWeapon::OnWeaponStateSet()
 {

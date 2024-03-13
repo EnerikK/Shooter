@@ -98,6 +98,8 @@ public:
 	FORCEINLINE UAnimMontage* GetReloadMontage() const {return ReloadMontage;}
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const {return AttachedGrenade;}
 	FORCEINLINE ULagCompensationComponent* GetLagCompensation() const {return LagCompensation;}
+	FORCEINLINE bool IsHoldingFlag() const;
+	
 	ECombatState GetCombatState() const;
 	bool IsLocallyReloading();
 
