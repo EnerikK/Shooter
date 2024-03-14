@@ -20,14 +20,22 @@ public:
 	AFlag();
 	virtual void Dropped() override;
 
+	
+	void ResetFlag();
+
+	FORCEINLINE FVector GetInitialTransform() const { return InitialTransform; }
+
 protected:
 	
 	virtual void OnEquipped() override;
 	virtual void OnDropped() override;
+	virtual void BeginPlay() override;
+
 
 private:
-
+	
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* FlagMesh;
 	
+	FVector InitialTransform;
 };

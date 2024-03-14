@@ -5,10 +5,12 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Animation/AnimationAsset.h"
+#include "Shooter/Types/Team.h"
 #include "Weapon//WeaponTypes.h"
 #include "Weapon.generated.h"
 
 
+class UCombatComponent;
 class AShooterPlayerController;
 class AShooterCharacter;
 class AAmmoEject;
@@ -66,6 +68,7 @@ public:
 	FORCEINLINE int32 GetMagCapacity() const {return MagCapacity;}
 	FORCEINLINE float GetDamage() const {return Damage;}
 	FORCEINLINE float GetHeadShotDamage() const {return HeadShotDamage;}
+	FORCEINLINE ETeam GetTeam() const {return Team;}
 	bool IsEmpty();
 	bool IsFull();
 
@@ -158,6 +161,8 @@ protected:
 
 private:
 
+	
+
 	UPROPERTY(VisibleAnywhere,Category="Weapon Properties")
 	USkeletalMeshComponent* WeaponMesh;
 
@@ -207,6 +212,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
+
+	UPROPERTY(EditAnywhere)
+	ETeam Team;
 
 	
 	

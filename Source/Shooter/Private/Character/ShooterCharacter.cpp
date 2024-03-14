@@ -17,6 +17,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/ShooterPlayerController.h"
+#include "PlayerStarts/TeamPlayerStart.h"
 #include "PlayerState/ShooterPlayerState.h"
 #include "Shooter/Shooter.h"
 #include "Weapon/Weapon.h"
@@ -240,6 +241,35 @@ void AShooterCharacter::DropOrDestroyWeapons()
 		}
 	}
 }
+void AShooterCharacter::SetSpawnPoint()
+{
+	if(HasAuthority() && ShooterPlayerState->GetTeam() != ETeam::ET_NoTeam)
+	{
+		TArray<AActor*> PlayerStarts;
+		UGameplayStatics::GetAllActorsOfClass(this,ATeamPlayerStart::StaticClass(),PlayerStarts);
+		TArray<ATeamPlayerStart*> TeamPlayerStarts;
+		for(auto Start : PlayerStarts)
+		{
+			ATeamPlayerStart* TeamStart = Cast<ATeamPlayerStart>(Start);
+			if(TeamStart && TeamStart->Team == ShooterPlayerState->GetTeam())
+			{
+				TeamPlayerStarts.Add(TeamStart);
+			}
+		}
+		if(TeamPlayerStarts.Num() > 0)
+		{
+			ATeamPlayerStart* ChosenPlayerStart = TeamPlayerStarts[FMath::RandRange(0,TeamPlayerStarts.Num() - 1 )];
+			SetActorLocationAndRotation(ChosenPlayerStart->GetActorLocation(),ChosenPlayerStart->GetActorRotation());
+		}
+	}
+}
+void AShooterCharacter::OnPlayerStateInitialized()
+{
+	ShooterPlayerState->AddToScore(0.f);
+	ShooterPlayerState->AddToDefeats(0);
+	SetTeamColor(ShooterPlayerState->GetTeam());
+	SetSpawnPoint();
+}
 void AShooterCharacter::DropOrDestroyWeapon(AWeapon* Weapon)
 {
 	if(Weapon == nullptr) return;
@@ -365,6 +395,11 @@ void AShooterCharacter::RotateInPlace(float DeltaTime)
 		TurningInPlace = ETurnInPlace::ETurnIP_NotTurning;
 		return;
 	}
+	if(Combat && Combat->EquippedWeapon)
+	{
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+		bUseControllerRotationYaw = true;
+	}
 	if(ShooterPlayerController)
 	{
 		if(ShooterPlayerController->bDisableGameplay)
@@ -459,10 +494,7 @@ void AShooterCharacter::PollInit()
 		ShooterPlayerState = GetPlayerState<AShooterPlayerState>();
 		if(ShooterPlayerState)
 		{
-			ShooterPlayerState->AddToScore(0.f);
-			ShooterPlayerState->AddToDefeats(0);
-			SetTeamColor(ShooterPlayerState->GetTeam());
-			
+			OnPlayerStateInitialized();
 			AShooterGameState* ShooterGameState = Cast<AShooterGameState>(UGameplayStatics::GetGameState(this));
 			if(ShooterGameState && ShooterGameState->TopScoringPlayer.Contains(ShooterPlayerState))
 			{
@@ -869,6 +901,11 @@ bool AShooterCharacter::IsHoldingFlag() const
 	if(Combat == nullptr) return false;
 	return Combat->bHoldingFlag;
 }
+void AShooterCharacter::SetHoldingFlag(bool bHolding)
+{
+	if(Combat == nullptr) return;
+	Combat->bHoldingFlag = bHolding;
+}
 ECombatState AShooterCharacter::GetCombatState() const
 {
 	if(Combat == nullptr) return ECombatState::ECState_MAX;
@@ -878,5 +915,11 @@ bool AShooterCharacter::IsLocallyReloading()
 {
 	if(Combat == nullptr) return false;
 	return Combat->bLocallyReloading;
+}
+ETeam AShooterCharacter::GetTeam()
+{
+	ShooterPlayerState = ShooterPlayerState == nullptr ? GetPlayerState<AShooterPlayerState>() : ShooterPlayerState;
+	if(ShooterPlayerState == nullptr) return ETeam::ET_NoTeam;
+	return ShooterPlayerState->GetTeam();
 }
 

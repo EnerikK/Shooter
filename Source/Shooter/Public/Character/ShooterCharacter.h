@@ -99,9 +99,13 @@ public:
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const {return AttachedGrenade;}
 	FORCEINLINE ULagCompensationComponent* GetLagCompensation() const {return LagCompensation;}
 	FORCEINLINE bool IsHoldingFlag() const;
+
+	void SetHoldingFlag(bool bHolding);
 	
 	ECombatState GetCombatState() const;
 	bool IsLocallyReloading();
+
+	ETeam GetTeam();
 
 	/*Hit Boxes used for server-side rewind*/
 
@@ -177,6 +181,8 @@ protected:
 	void PollInit();
 	void DropOrDestroyWeapon(AWeapon* Weapon);
 	void DropOrDestroyWeapons();
+	void SetSpawnPoint();
+	void OnPlayerStateInitialized();
 
 private:
 

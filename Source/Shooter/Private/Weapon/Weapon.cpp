@@ -29,7 +29,8 @@ AWeapon::AWeapon()
 	WeaponMesh->SetCollisionResponseToAllChannels(ECR_Block);
 	WeaponMesh->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
+	WeaponMesh->SetIsReplicated(true);
+	
 	WeaponMesh->SetCustomDepthStencilValue(250);
 	WeaponMesh->MarkRenderStateDirty();
 	EnableCustomDepth(true);
@@ -136,6 +137,8 @@ void AWeapon::Dropped()
 	SetOwner(nullptr);
 	ShooterOwnerCharacter = nullptr;
 	ShooterOwnerPlayerController = nullptr;
+	//Combat->bHoldingFlag = false;
+	
 	
 }
 void AWeapon::SetWeaponState(EWeaponState State)
@@ -253,6 +256,8 @@ void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	AShooterCharacter* Character = Cast<AShooterCharacter>(OtherActor);
 	if(Character)
 	{
+		if(WeaponType == EWeaponType::EWT_Flag && Character->GetTeam() == Team) return;
+		if(Character->IsHoldingFlag()) return;
 		Character->SetOverlappingWeapon(this);
 	}
 }
@@ -262,6 +267,8 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	AShooterCharacter* Character = Cast<AShooterCharacter>(OtherActor);
 	if(Character)
 	{
+		if(WeaponType == EWeaponType::EWT_Flag && Character->GetTeam() == Team) return;
+		if(Character->IsHoldingFlag()) return;
 		Character->SetOverlappingWeapon(nullptr);
 	}
 }

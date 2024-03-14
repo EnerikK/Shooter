@@ -3,9 +3,10 @@
 
 #include "Weapon/Flag.h"
 
-#include "Components/CombatComponent.h"
+#include "Character/ShooterCharacter.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Net/UnrealNetwork.h"
 
 AFlag::AFlag()
 {
@@ -16,6 +17,13 @@ AFlag::AFlag()
 	FlagMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 	FlagMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
+void AFlag::BeginPlay()
+{
+	Super::BeginPlay();
+
+	InitialTransform = GetActorLocation();
+}
+
 void AFlag::Dropped()
 {
 	SetWeaponState(EWeaponState::EW_Dropped);
@@ -24,6 +32,29 @@ void AFlag::Dropped()
 	SetOwner(nullptr);
 	ShooterOwnerCharacter = nullptr;
 	ShooterOwnerPlayerController = nullptr;
+	
+}
+void AFlag::ResetFlag()
+{
+	AShooterCharacter* FlagBearer = Cast<AShooterCharacter>(GetOwner());
+	if(FlagBearer)
+	{
+		FlagBearer->SetHoldingFlag(false);
+		FlagBearer->SetOverlappingWeapon(nullptr);
+		FlagBearer->UnCrouch(); 
+	}
+	if(!HasAuthority()) return;
+	
+	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld,true);
+	FlagMesh->DetachFromComponent(DetachRules);
+	SetWeaponState(EWeaponState::EW_Initial);
+	GetPickUpSphere()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	GetPickUpSphere()->SetCollisionResponseToChannel(ECC_Pawn,ECR_Overlap);
+	SetOwner(nullptr);
+	ShooterOwnerCharacter = nullptr;
+	ShooterOwnerPlayerController = nullptr;
+	
+	SetActorLocation(InitialTransform);
 }
 void AFlag::OnEquipped()
 {
@@ -32,7 +63,8 @@ void AFlag::OnEquipped()
 	
 	FlagMesh->SetSimulatePhysics(false);
 	FlagMesh->SetEnableGravity(false);
-	FlagMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	FlagMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	FlagMesh->SetCollisionResponseToChannel(ECC_WorldDynamic,ECR_Overlap);
 	EnableCustomDepth(false);
 }
 
@@ -52,4 +84,6 @@ void AFlag::OnDropped()
 	FlagMesh->SetCustomDepthStencilValue(251);
 	FlagMesh->MarkRenderStateDirty();
 	EnableCustomDepth(true);
+	
 }
+

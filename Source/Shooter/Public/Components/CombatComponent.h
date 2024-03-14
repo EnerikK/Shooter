@@ -34,6 +34,12 @@ public:
 	FORCEINLINE bool GetHoldingFlag() const {return bHoldingFlag;}
 	bool bShouldSwapWeapon();
 
+	UPROPERTY(ReplicatedUsing = OnRep_HoldingFlag)
+	bool bHoldingFlag = false;
+	
+	UFUNCTION()
+	void OnRep_HoldingFlag();
+
 	void EquipWeapon(AWeapon* WeaponToEquip);
 	void SwapWeapon();
 	void Reload();
@@ -66,11 +72,7 @@ public:
 
 	bool bLocallyReloading = false;
 
-	UPROPERTY(ReplicatedUsing = OnRep_HoldingFlag)
-	bool bHoldingFlag = false;
 
-	UFUNCTION()
-	void OnRep_HoldingFlag();
 protected:
 
 	virtual void BeginPlay() override;
@@ -270,6 +272,10 @@ private:
 	int32 MaxGrenades = 4;
 	
 	void UpdateHudGrenades();
+
+	void SetPushReplicatedVariable(bool bNewValue);
+
+	
 	
 	UPROPERTY()
 	AWeapon* TheFlag;

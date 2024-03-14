@@ -16,6 +16,7 @@ namespace MatchState
 AShooterGameModeBase::AShooterGameModeBase()
 {
 	bDelayedStart = true;
+	bReplicates = true;
 }
 void AShooterGameModeBase::BeginPlay()
 {

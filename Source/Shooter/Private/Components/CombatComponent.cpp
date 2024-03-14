@@ -13,6 +13,7 @@
 #include "Hud/ShooterHUD.h"
 #include "Player/ShooterPlayerController.h"
 #include "TimerManager.h"
+#include "Net/Core/PushModel/PushModel.h"
 #include "Sound/SoundCue.h"
 #include "Weapon/Projectile.h"
 #include "Weapon/Shotgun.h"
@@ -45,14 +46,28 @@ void UCombatComponent::BeginPlay()
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
  	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
- 
+
+	/*Old way of replicating*/
  	DOREPLIFETIME(UCombatComponent,EquippedWeapon);
 	DOREPLIFETIME(UCombatComponent,SecondaryWeapon);
  	DOREPLIFETIME(UCombatComponent,bAiming);
 	DOREPLIFETIME(UCombatComponent,CombatState);
 	DOREPLIFETIME_CONDITION(UCombatComponent,CarriedAmmo,COND_OwnerOnly);
 	DOREPLIFETIME(UCombatComponent,Grenades);
-	DOREPLIFETIME(UCombatComponent,bHoldingFlag);
+	//DOREPLIFETIME(UCombatComponent,bHoldingFlag);
+
+	/*New Way of replicating more efficient*/
+	FDoRepLifetimeParams SharedParams;
+	SharedParams.bIsPushBased = true;
+	DOREPLIFETIME_WITH_PARAMS_FAST(UCombatComponent,bHoldingFlag,SharedParams);
+}
+void UCombatComponent::SetPushReplicatedVariable(bool bNewValue)
+{
+	if(bHoldingFlag != bNewValue)
+	{
+		bHoldingFlag = bNewValue;
+		MARK_PROPERTY_DIRTY_FROM_NAME(UCombatComponent,bHoldingFlag,this);
+	}
 }
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
