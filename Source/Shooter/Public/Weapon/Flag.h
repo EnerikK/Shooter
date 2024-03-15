@@ -19,11 +19,9 @@ public:
 
 	AFlag();
 	virtual void Dropped() override;
-
-	
 	void ResetFlag();
-
-	FORCEINLINE FVector GetInitialTransform() const { return InitialTransform; }
+	
+	FORCEINLINE FTransform GetInitialTransform() const { return InitialTransform; }
 
 protected:
 	
@@ -31,11 +29,12 @@ protected:
 	virtual void OnDropped() override;
 	virtual void BeginPlay() override;
 
-
 private:
 	
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* FlagMesh;
+
+	FTransform InitialTransform;
+
 	
-	FVector InitialTransform;
 };

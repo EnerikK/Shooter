@@ -9,6 +9,7 @@
 AFlagZone::AFlagZone()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	
 	ZoneSphere = CreateDefaultSubobject<USphereComponent>(TEXT("ZoneSphere"));
 	SetRootComponent(ZoneSphere);
 
@@ -30,7 +31,6 @@ void AFlagZone::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 		if(GameMode)
 		{
 			GameMode->FlagCaptured(OverlappingFlag,this);
-			OverlappingFlag->ResetFlag();
 		}
 		OverlappingFlag->ResetFlag();
 	}

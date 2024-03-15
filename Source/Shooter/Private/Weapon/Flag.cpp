@@ -20,8 +20,7 @@ AFlag::AFlag()
 void AFlag::BeginPlay()
 {
 	Super::BeginPlay();
-
-	InitialTransform = GetActorLocation();
+	InitialTransform = GetActorTransform();
 }
 
 void AFlag::Dropped()
@@ -50,11 +49,12 @@ void AFlag::ResetFlag()
 	SetWeaponState(EWeaponState::EW_Initial);
 	GetPickUpSphere()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	GetPickUpSphere()->SetCollisionResponseToChannel(ECC_Pawn,ECR_Overlap);
+	
 	SetOwner(nullptr);
 	ShooterOwnerCharacter = nullptr;
 	ShooterOwnerPlayerController = nullptr;
 	
-	SetActorLocation(InitialTransform);
+	SetActorTransform(InitialTransform);
 }
 void AFlag::OnEquipped()
 {
@@ -67,7 +67,6 @@ void AFlag::OnEquipped()
 	FlagMesh->SetCollisionResponseToChannel(ECC_WorldDynamic,ECR_Overlap);
 	EnableCustomDepth(false);
 }
-
 void AFlag::OnDropped()
 {
 	if(HasAuthority())
