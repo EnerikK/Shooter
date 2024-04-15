@@ -27,8 +27,6 @@ APickUps::APickUps()
 	PickUpMesh->SetupAttachment(OverlapSphere);
 	PickUpMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	PickUpMesh->SetRelativeScale3D(FVector(2.5f,2.5f,2.5f));
-	PickUpMesh->SetRenderCustomDepth(true);
-	PickUpMesh->SetCustomDepthStencilValue(250);
 
 	PickupEffectComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("PickUpEffectComponent"));
 	PickupEffectComponent->SetupAttachment(RootComponent);

@@ -289,8 +289,8 @@ void AShooterCharacter::MulticastElim_Implementation(bool bPlayerLeftGame)
 	{
 		ShooterPlayerController->SetHudWeaponAmmo(0);
 	}
-	bIsElimmed = true;
 	PlayElimMontage();
+	bIsElimmed = true;
 	//StartDissolve Effect
 	if(DissolveMaterialInstance)
 	{
@@ -524,7 +524,6 @@ void AShooterCharacter::PostInitializeComponents()
 			LagCompensation->Controller = Cast<AShooterPlayerController>(Controller);
 		}
 	}
-	
 }
 
 void AShooterCharacter::Destroyed()
@@ -813,6 +812,7 @@ void AShooterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 }
 void AShooterCharacter::TurnInPlace(float DeltaTime)
 {
+	UE_LOG(LogTemp,Warning,TEXT("AO_YAW : %f"),AO_Yaw);
 	if(AO_Yaw > 90.f)
 	{
 		TurningInPlace = ETurnInPlace::ETurnIP_Right;

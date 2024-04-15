@@ -8,6 +8,7 @@
 #include "PickUp.generated.h"
 
 class USphereComponent;
+class USoundCue;
 
 UCLASS()
 class SHOOTER_API APickUps : public AActor

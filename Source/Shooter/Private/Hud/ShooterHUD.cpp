@@ -119,7 +119,6 @@ void AShooterHUD::DrawCrosshair(UTexture2D* Texture, FVector2d ViewportCenter,FV
 	const float TextureHeight = Texture->GetSizeY();
 	const FVector2D TextureDrawPoint(ViewportCenter.X - (TextureWidth / 2.f) + Spread.X,ViewportCenter.Y - (TextureHeight / 2.f) + Spread.Y);
 	
-	
 	DrawTexture(
 		Texture,
 		TextureDrawPoint.X,

@@ -104,10 +104,10 @@ void UCombatComponent::FireButtonPressed(bool bPressed)
 	{
 		Fire();
 	}
-	else
+	/*else
 	{
 		bCanFire = false;
-	}
+	}*/
 }
 
 void UCombatComponent::SlideButtonPressed(bool bPressed)
@@ -215,7 +215,10 @@ void UCombatComponent::FireTimerFinished()
 	{
 		Fire();
 	}
-	ReloadEmptyWeapon();
+	if(bAiming)
+	{
+		ReloadEmptyWeapon();
+	}
 }
 bool UCombatComponent::CanFire()
 {
@@ -327,7 +330,7 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 		Character->Crouch();
 		bHoldingFlag = true;
 		WeaponToEquip->SetWeaponState(EWeaponState::EW_Equipped);
-		AttachFlagToLeftHand(WeaponToEquip);
+		AttachFlag(WeaponToEquip);
 		WeaponToEquip->SetOwner(Character);
 		TheFlag = WeaponToEquip;
 	}
@@ -441,13 +444,13 @@ void UCombatComponent::AttachActorToLeftHand(AActor* ActorToAttach)
 	}
 }
 
-void UCombatComponent::AttachFlagToLeftHand(AWeapon* Flag)
+void UCombatComponent::AttachFlag(AWeapon* Flag)
 {
 	if(Character == nullptr || Character->GetMesh() == nullptr || Flag == nullptr) return;
-	const USkeletalMeshSocket* HandSocket = Character->GetMesh()->GetSocketByName(FName("FlagSocket"));
-	if(HandSocket)
+	const USkeletalMeshSocket* BackSocket = Character->GetMesh()->GetSocketByName(FName("FlagBackSocket"));
+	if(BackSocket)
 	{
-		HandSocket->AttachActor(Flag,Character->GetMesh());
+		BackSocket->AttachActor(Flag,Character->GetMesh());
 	}
 }
 void UCombatComponent::AttachActorToBackPack(AActor* ActorToAttach)
@@ -504,10 +507,10 @@ void UCombatComponent::OnRep_CombatState()
 		if(Character && !Character->IsLocallyControlled()) HandleReload();
 		break;
 	case ECombatState::ECState_Unoccupied:
-		/*if(bFireButtonPressed)
+		if(bFireButtonPressed)
 		{
 			Fire();
-		}*/
+		}
 		break;
 	case ECombatState::ECState_ThrowGrenade:
 		if(Character && !Character->IsLocallyControlled())
@@ -545,10 +548,10 @@ void UCombatComponent::FinishReloading()
 		CombatState = ECombatState::ECState_Unoccupied;
 		UpdateAmmoValues();
 	}
-	/*if(bFireButtonPressed)
+	if(bFireButtonPressed)
 	{
 		Fire();
-	}*/
+	}
 }
 void UCombatComponent::FinishSwap()
 {
@@ -560,7 +563,6 @@ void UCombatComponent::FinishSwap()
 }
 void UCombatComponent::FinishSwapAttachWeapon()
 {
-	
 	AWeapon* TempWeapon = EquippedWeapon;
 	EquippedWeapon = SecondaryWeapon;
 	SecondaryWeapon = TempWeapon;

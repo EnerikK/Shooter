@@ -14,15 +14,14 @@
 #include "Player/ShooterPlayerController.h"
 #include "Weapon/AmmoEject.h"
 #include "Weapon/WeaponTypes.h"
-#include "Weapon/Projectile.h"
-
 
 AWeapon::AWeapon()
 {
  	
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
-
+	SetReplicateMovement(true);
+	
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	SetRootComponent(WeaponMesh);
 
@@ -31,10 +30,6 @@ AWeapon::AWeapon()
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WeaponMesh->SetIsReplicated(true);
 	
-	WeaponMesh->SetCustomDepthStencilValue(250);
-	WeaponMesh->MarkRenderStateDirty();
-	EnableCustomDepth(true);
-
 	PickUpSphere = CreateDefaultSubobject<USphereComponent>(TEXT("PickUpSphere"));
 	PickUpSphere->SetupAttachment(RootComponent);
 	PickUpSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
@@ -203,10 +198,6 @@ void AWeapon::OnDropped()
 	WeaponMesh->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
 	WeaponMesh->SetCollisionResponseToChannel(ECC_Camera,ECR_Ignore);
 		
-	WeaponMesh->SetCustomDepthStencilValue(251);
-	WeaponMesh->MarkRenderStateDirty();
-	EnableCustomDepth(true);
-	
 	ShooterOwnerCharacter = ShooterOwnerCharacter == nullptr ? Cast<AShooterCharacter>(GetOwner()) : ShooterOwnerCharacter;
 	if(ShooterOwnerCharacter && bUseServerSideRewind)
 	{

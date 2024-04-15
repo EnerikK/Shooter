@@ -44,6 +44,7 @@ public:
 	TSubclassOf<UUserWidget> HudOverlayClass;
 	UPROPERTY()
 	UHudOverlay* HudOverlay;
+	
 	void AddHudOverlay();
 
 	UPROPERTY(EditAnywhere,Category="Announcements")

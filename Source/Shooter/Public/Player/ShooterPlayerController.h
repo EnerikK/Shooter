@@ -220,6 +220,9 @@ private:
 	TObjectPtr<UInputAction> FireAction;
 
 	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> ReleaseFireAction;
+
+	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> ReloadAction;
 
 	UPROPERTY(EditAnywhere, Category="Input")
@@ -239,6 +242,7 @@ private:
 	void Aim(const FInputActionValue& Value);
 	void ReleaseAim(const FInputActionValue& Value);
 	void Fire(const FInputActionValue& Value);
+	void ReleaseFire(const FInputActionValue& Value);
 	void Reload(const FInputActionValue& Value);
 	void Toss(const FInputActionValue& Value);
 	void Slide(const FInputActionValue& Value);

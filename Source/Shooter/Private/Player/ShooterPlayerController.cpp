@@ -651,13 +651,16 @@ void AShooterPlayerController::SetupInputComponent()
 	CrouchAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Crouch);
 	
 	EnhancedInputComponent->BindAction(
-	AimAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Aim);
+	AimAction,ETriggerEvent::Started,this,&AShooterPlayerController::Aim);
 
 	EnhancedInputComponent->BindAction(
 	ReleaseAimAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::ReleaseAim);
 
 	EnhancedInputComponent->BindAction(
-	FireAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Fire);
+	FireAction,ETriggerEvent::Started,this,&AShooterPlayerController::Fire);
+
+	EnhancedInputComponent->BindAction(
+	FireAction,ETriggerEvent::Completed,this,&AShooterPlayerController::ReleaseFire);
 
 	EnhancedInputComponent->BindAction(
 	ReloadAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Reload);
@@ -789,6 +792,16 @@ void AShooterPlayerController::Fire(const FInputActionValue& Value)
 		ControlledCharacter->FireButtonPressed();
 	}
 	
+}
+
+void AShooterPlayerController::ReleaseFire(const FInputActionValue& Value)
+{
+	if(bDisableGameplay) return;
+	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
+	if(ControlledCharacter)
+	{
+		ControlledCharacter->FireButtonReleased();
+	}
 }
 
 void AShooterPlayerController::Reload(const FInputActionValue& Value)

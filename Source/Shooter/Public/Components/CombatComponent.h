@@ -128,7 +128,7 @@ protected:
 	void DropEquippedWeapon();
 	void AttachActorToRightHand(AActor* ActorToAttach);
 	void AttachActorToLeftHand(AActor* ActorToAttach);
-	void AttachFlagToLeftHand(AWeapon* Flag);
+	void AttachFlag(AWeapon* Flag);
 	void AttachActorToBackPack(AActor* ActorToAttach);
 	void UpdateCarriedAmmo();
 	void PlayEquippedSound(AWeapon* WeaponToEquip);
@@ -137,9 +137,6 @@ protected:
 	void EquipPrimaryWeapon(AWeapon* WeaponToEquip);
 	void EquipSecondaryWeapon(AWeapon* WeaponToEquip);
 
-
-
-	
 private:
 
 	UPROPERTY()
@@ -274,8 +271,6 @@ private:
 	void UpdateHudGrenades();
 
 	void SetPushReplicatedVariable(bool bNewValue);
-
-	
 	
 	UPROPERTY()
 	AWeapon* TheFlag;
