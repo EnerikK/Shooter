@@ -79,34 +79,34 @@ void UBuffComponent::BuffSpeed(float BuffBaseSpeed, float BuffCrouchSpeed, float
 {
 	if(Character == nullptr) return;
 	Character->GetWorldTimerManager().SetTimer(SpeedBuffTimer,this,&UBuffComponent::ResetSpeed,BuffTime);
-	if(Character->GetCharacterMovement())
+	if(Character->GetShooterCharacterComponent())
 	{
-		Character->GetCharacterMovement()->MaxWalkSpeed = BuffBaseSpeed;
-		Character->GetCharacterMovement()->MaxWalkSpeedCrouched = BuffCrouchSpeed;
+		Character->GetShooterCharacterComponent()->Walk_MaxWalkSpeed = BuffBaseSpeed;
+		Character->GetShooterCharacterComponent()->MaxWalkSpeedCrouched = BuffCrouchSpeed;
 	}
 	MulticastSpeedBuff(BuffBaseSpeed,BuffCrouchSpeed);
 }
 void UBuffComponent::ResetSpeed()
 {
-	if(Character == nullptr || Character->GetCharacterMovement() == nullptr) return;
+	if(Character == nullptr || Character->GetShooterCharacterComponent() == nullptr) return;
 
-	Character->GetCharacterMovement()->MaxWalkSpeed = InitialSpeed;
-	Character->GetCharacterMovement()->MaxWalkSpeedCrouched = InitialCrouchSpeed;
+	Character->GetShooterCharacterComponent()->Walk_MaxWalkSpeed = InitialSpeed;
+	Character->GetShooterCharacterComponent()->MaxWalkSpeedCrouched = InitialCrouchSpeed;
 	MulticastSpeedBuff(InitialSpeed,InitialCrouchSpeed);
 }
 void UBuffComponent::MulticastSpeedBuff_Implementation(float BaseSpeed, float CrouchSpeed)
 {
-	if(Character && Character->GetCharacterMovement())
+	if(Character && Character->GetShooterCharacterComponent())
 	{	
-		Character->GetCharacterMovement()->MaxWalkSpeed = BaseSpeed;
-		Character->GetCharacterMovement()->MaxWalkSpeedCrouched = CrouchSpeed;
+		Character->GetShooterCharacterComponent()->Walk_MaxWalkSpeed = BaseSpeed;
+		Character->GetShooterCharacterComponent()->MaxWalkSpeedCrouched = CrouchSpeed;
 	}
 }
 void UBuffComponent::ResetJump()
 {
-	if(Character->GetCharacterMovement())
+	if(Character->GetShooterCharacterComponent())
 	{
-		Character->GetCharacterMovement()->JumpZVelocity = InitialJumpVelocity;
+		Character->GetShooterCharacterComponent()->JumpZVelocity = InitialJumpVelocity;
 	}
 	MulticastJumpBuff(InitialJumpVelocity);
 }
@@ -114,17 +114,17 @@ void UBuffComponent::BuffJump(float BuffJumpVelocity, float BuffDuration)
 {
 	if(Character == nullptr) return;
 	Character->GetWorldTimerManager().SetTimer(JumpBuffTimer,this,&UBuffComponent::ResetJump,BuffDuration);
-	if(Character->GetCharacterMovement())
+	if(Character->GetShooterCharacterComponent())
 	{
-		Character->GetCharacterMovement()->JumpZVelocity = BuffJumpVelocity;
+		Character->GetShooterCharacterComponent()->JumpZVelocity = BuffJumpVelocity;
 	}
 	MulticastJumpBuff(BuffJumpVelocity);
 }
 void UBuffComponent::MulticastJumpBuff_Implementation(float JumpVelocity)
 {
-	if(Character && Character->GetCharacterMovement())
+	if(Character && Character->GetShooterCharacterComponent())
 	{
-		Character->GetCharacterMovement()->JumpZVelocity = JumpVelocity;
+		Character->GetShooterCharacterComponent()->JumpZVelocity = JumpVelocity;
 	}
 }
 

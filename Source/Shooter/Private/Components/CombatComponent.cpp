@@ -110,20 +110,6 @@ void UCombatComponent::FireButtonPressed(bool bPressed)
 	}*/
 }
 
-void UCombatComponent::SlideButtonPressed(bool bPressed)
-{
-	if(CombatState != ECombatState::ECState_Unoccupied) return;
-	bSlideButtonPressed = bPressed;
-	if(bSlideButtonPressed)
-	{
-		Slide();
-	}
-	else
-	{
-		bCanSlide = false;
-	}
-	
-}
 void UCombatComponent::ShotgunShellReload()
 {
 	if(Character && Character->HasAuthority())
@@ -186,22 +172,6 @@ void UCombatComponent::FireShotgunWeapon()
 	}
 	
 }
-void UCombatComponent::Slide()
-{
-	if(Character)
-	{
-		if(CanSlide())
-		{
-			Character->PlaySlideMontage();
-			bCanSlide = true;
-		}
-		else
-		{
-			bCanSlide = false;
-		}
-	}
-}
-
 void UCombatComponent::StartFiretimer()
 {
 	if(EquippedWeapon == nullptr || Character == nullptr) return;
@@ -229,12 +199,6 @@ bool UCombatComponent::CanFire()
 	return !EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECState_Unoccupied;
 	
 }
-bool UCombatComponent::CanSlide()
-{
-	if(CombatState == ECombatState::ECState_Unoccupied) return true;
-	return false;
-}
-
 void UCombatComponent::OnRep_CarriedAmmo()
 {
 	Controller = Controller == nullptr ? Cast<AShooterPlayerController>(Character->Controller) : Controller;

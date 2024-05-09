@@ -234,6 +234,9 @@ private:
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> QuitAction;
 
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> ShiftPressed;
+
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void Jump(const FInputActionValue& Value);
@@ -247,6 +250,8 @@ private:
 	void Toss(const FInputActionValue& Value);
 	void Slide(const FInputActionValue& Value);
 	void Quit(const FInputActionValue& Value);
+	void StartSprint(const FInputActionValue& Value);
+	void StopSprint(const FInputActionValue& Value);
 
 
 };

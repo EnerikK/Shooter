@@ -674,6 +674,11 @@ void AShooterPlayerController::SetupInputComponent()
 	EnhancedInputComponent->BindAction(
 	QuitAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Quit);
 	
+	EnhancedInputComponent->BindAction(
+	ShiftPressed,ETriggerEvent::Started,this,&AShooterPlayerController::StartSprint);
+	EnhancedInputComponent->BindAction(
+		ShiftPressed,ETriggerEvent::Completed,this,&AShooterPlayerController::StopSprint);
+	
 }
 
 void AShooterPlayerController::Move(const FInputActionValue& Value)
@@ -830,11 +835,11 @@ void AShooterPlayerController::Toss(const FInputActionValue& Value)
 void AShooterPlayerController::Slide(const FInputActionValue& Value)
 {
 	if(bDisableGameplay) return;
-	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
-	if(ControlledCharacter)
+	if(AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter()))
 	{
-		ControlledCharacter->SlideButtonPressed();
+		ControlledCharacter->GetShooterCharacterComponent()->SlidePressed();
 	}
+
 }
 
 void AShooterPlayerController::Quit(const FInputActionValue& Value)
@@ -855,6 +860,20 @@ void AShooterPlayerController::Quit(const FInputActionValue& Value)
 		{
 			ReturnToMainMenu->MenuTearDown();
 		}
+	}
+}
+void AShooterPlayerController::StartSprint(const FInputActionValue& Value)
+{
+	if(AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter()))
+	{
+		ControlledCharacter->GetShooterCharacterComponent()->SprintPressed();
+	}
+}
+void AShooterPlayerController::StopSprint(const FInputActionValue& Value)
+{
+	if(AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter()))
+	{
+		ControlledCharacter->GetShooterCharacterComponent()->SprintReleased();
 	}
 }
 	

@@ -29,8 +29,8 @@ void UShooterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	Velocity.Z = 0.f;
 	Speed = Velocity.Size();
 
-	bIsInAir = Character->GetCharacterMovement()->IsFalling();
-	bIsAccelerating = Character->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f ? true : false;
+	bIsInAir = Character->GetShooterCharacterComponent()->IsFalling();
+	bIsAccelerating = Character->GetShooterCharacterComponent()->GetCurrentAcceleration().Size() > 0.f ? true : false;
 	bWeaponEquipped = Character->IsWeaponEquipped();
 	EquippedWeapon = Character->GetEquippedWeapon();
 	bIsCrouched = Character->bIsCrouched;

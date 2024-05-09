@@ -1,4 +1,4 @@
-// Hello :) 
+ // Hello :) 
 
 #include "Shooter/Public/Character/ShooterCharacter.h"
 
@@ -24,7 +24,9 @@
 #include "Weapon/WeaponTypes.h"
 
 
-AShooterCharacter::AShooterCharacter()
+AShooterCharacter::AShooterCharacter(const FObjectInitializer& ObjectInitializer)
+	:Super(ObjectInitializer.SetDefaultSubobjectClass<UShooterMovementComponent>(
+	  ACharacter::CharacterMovementComponentName))
 {
 	PrimaryActorTick.bCanEverTick = true;
 	NetUpdateFrequency = 66.f;
@@ -47,6 +49,9 @@ AShooterCharacter::AShooterCharacter()
 
 	Buff = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
 	Buff->SetIsReplicated(true);
+
+	ShooterMovementComponent = Cast<UShooterMovementComponent>(GetCharacterMovement());
+	ShooterMovementComponent->SetIsReplicated(true);
 
 	LagCompensation = CreateDefaultSubobject<ULagCompensationComponent>(TEXT("LagCompensation"));
 	
@@ -182,6 +187,7 @@ void AShooterCharacter::BeginPlay()
 	UpdateHudAmmo();
 	UpdateHudHealth();
 	UpdateHudShield();
+	SlideStartDelegate.Broadcast();
 	if(HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this,&AShooterCharacter::ReceiveDamage);
@@ -513,8 +519,8 @@ void AShooterCharacter::PostInitializeComponents()
 	if(Buff)
 	{
 		Buff->Character = this;
-		Buff->SetInitialSpeed(GetCharacterMovement()->MaxWalkSpeed,GetCharacterMovement()->MaxWalkSpeedCrouched);
-		Buff->SetInitialJumpVelocity(GetCharacterMovement()->JumpZVelocity);
+		Buff->SetInitialSpeed(GetShooterCharacterComponent()->MaxWalkSpeed,GetShooterCharacterComponent()->MaxWalkSpeedCrouched);
+		Buff->SetInitialJumpVelocity(GetShooterCharacterComponent()->JumpZVelocity);
 	}
 	if(LagCompensation)
 	{
@@ -632,17 +638,7 @@ void AShooterCharacter::PlayThrowGrenadeMontage() const
 		AnimInstance->Montage_Play(GrenadeToss);
 	}
 }
-void AShooterCharacter::PlaySlideMontage()
-{
-	if(Combat == nullptr) return;
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
-	if(AnimInstance && Slide)
-	{
-		AnimInstance->Montage_Play(Slide);
-	}
-	
-}
 
 void AShooterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
@@ -668,12 +664,24 @@ bool AShooterCharacter::IsAiming()
 	return (Combat && Combat->bAiming);
 }
 
+bool AShooterCharacter::IsCrouching()
+{
+	if(GetShooterCharacterComponent()->bWantsToCrouch)
+	{
+		return true;
+	}
+	return false;
+}
 bool AShooterCharacter::IsSliding()
 {
-	return (Combat && Combat->bSlide);
+	if(GetShooterCharacterComponent()->IsSliding())
+	{
+		return true;
+	}
+	return false;
 }
 
-void AShooterCharacter::SpawnDefaultWeapon()
+ void AShooterCharacter::SpawnDefaultWeapon()
 {
 	ShooterGameMode =  ShooterGameMode == nullptr ?  GetWorld()->GetAuthGameMode<AShooterGameModeBase>() : ShooterGameMode;
 	UWorld* World = GetWorld();
@@ -788,17 +796,6 @@ void AShooterCharacter::GrenadeButtonPressed()
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("LEEEEEROYYYYYYY!"));	
 	}
 }
-
-void AShooterCharacter::SlideButtonPressed()
-{
-	if(Combat)
-	{
-		if(Combat->bHoldingFlag) return;
-		Combat->SlideButtonPressed(true);
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Sliding!"));	
-	}
-}
-
 void AShooterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 {
 	if(OverlappingWeapon)

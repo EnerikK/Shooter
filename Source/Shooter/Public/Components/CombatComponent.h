@@ -52,7 +52,6 @@ public:
 	void FinishSwapAttachWeapon();
 	
 	void FireButtonPressed(bool bPressed);
-	void SlideButtonPressed(bool bPressed);
 	
 	UFUNCTION(BlueprintCallable)
 	void ShotgunShellReload();
@@ -92,7 +91,6 @@ protected:
 	void LocalFire(const FVector_NetQuantize& TraceHitTarget);
 	void LocalShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTarget);
 	
-	void Slide();
 	
 	UFUNCTION(Server, Reliable,WithValidation)
 	void ServerFire(const FVector_NetQuantize& TraceHitTarget,float FireDelay);
@@ -161,7 +159,6 @@ private:
 	UFUNCTION()
 	void OnRep_Aiming();
 
-	bool bSlide;
 
 	UPROPERTY(EditAnywhere)
 	float BaseWalkSpeed;
@@ -171,7 +168,6 @@ private:
 
 	bool bFireButtonPressed;
 	
-	bool bSlideButtonPressed;
 
 	FVector HitTarget;
 
@@ -207,13 +203,11 @@ private:
 	FTimerHandle Firetimer;
 	
 	bool bCanFire = true;
-	bool bCanSlide = true;
 
 	void StartFiretimer();
 	void FireTimerFinished();
 
 	bool CanFire();
-	bool CanSlide();
 
 	//Carried ammo for the weapon equipped
 	UPROPERTY(ReplicatedUsing=OnRep_CarriedAmmo)

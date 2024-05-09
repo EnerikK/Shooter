@@ -25,14 +25,12 @@ public:
 	void BuffJump(float BuffJumpVelocity,float BuffDuration);
 	void SetInitialSpeed(float BaseSpeed,float BaseCrouchSpeed);
 	void SetInitialJumpVelocity(float Velocity);
-	
 
 protected:
 	
 	virtual void BeginPlay() override;
 	void HealRampUp(float DeltaTime);
 	void ShieldRampUp(float DeltaTime);
-
 
 private:
 

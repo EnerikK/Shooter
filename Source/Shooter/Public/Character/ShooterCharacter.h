@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "ShooterMovementComponent.h"
 #include "Components/LagCompensationComponent.h"
 #include "Components/TimelineComponent.h"
 #include "GameFramework/Character.h"
@@ -34,7 +35,8 @@ class SHOOTER_API AShooterCharacter : public ACharacter,public IInteractInterfac
 	GENERATED_BODY()
 
 public:
-	AShooterCharacter();
+	
+	AShooterCharacter(const FObjectInitializer& ObjectInitializer);
 		
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -48,7 +50,6 @@ public:
 	void PlayElimMontage();
 	void PlayHitReactMontage();
 	void PlayThrowGrenadeMontage() const;
-	void PlaySlideMontage();
 
 	
 	void UpdateHudHealth();
@@ -68,11 +69,11 @@ public:
 	void FireButtonReleased();
 	void ReloadButtonPressed();
 	void GrenadeButtonPressed();
-	void SlideButtonPressed();
 	
 	void SetOverlappingWeapon(AWeapon* Weapon);
 	bool IsWeaponEquipped();
 	bool IsAiming();
+	bool IsCrouching();
 	bool IsSliding();
 	bool bFinishedSwapping = false;
 	UFUNCTION(BlueprintImplementableEvent)
@@ -98,6 +99,9 @@ public:
 	FORCEINLINE UAnimMontage* GetReloadMontage() const {return ReloadMontage;}
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const {return AttachedGrenade;}
 	FORCEINLINE ULagCompensationComponent* GetLagCompensation() const {return LagCompensation;}
+	FORCEINLINE UAnimMontage* GetSlideMontage() const {return SlideMontage;}
+	FORCEINLINE UShooterMovementComponent* GetShooterCharacterComponent() const {return ShooterMovementComponent;}
+
 	FORCEINLINE bool IsHoldingFlag() const;
 
 	void SetHoldingFlag(bool bHolding);
@@ -106,6 +110,12 @@ public:
 	bool IsLocallyReloading();
 
 	ETeam GetTeam();
+	
+	UPROPERTY()
+	FSlideStartDelegate SlideStartDelegate;
+	UPROPERTY()
+	FOnLeftGame OnLeftGame;
+
 
 	/*Hit Boxes used for server-side rewind*/
 
@@ -163,7 +173,6 @@ public:
 	UFUNCTION(Server,Reliable)
 	void ServerLeaveGame();
 
-	FOnLeftGame OnLeftGame;
 
 	UFUNCTION(NetMulticast,Reliable)
 	void MulticastGainedTheLead();
@@ -185,6 +194,9 @@ protected:
 	void OnPlayerStateInitialized();
 
 private:
+	
+	UPROPERTY(BlueprintReadOnly,EditDefaultsOnly,Category=Movement,meta=(AllowPrivateAccess = true))
+	UShooterMovementComponent* ShooterMovementComponent;
 
 	UPROPERTY()
 	AShooterPlayerState* ShooterPlayerState;
@@ -202,10 +214,10 @@ private:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = true))
 	UCombatComponent* Combat;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere,BlueprintReadWrite,meta = (AllowPrivateAccess = true))
 	UBuffComponent* Buff;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere,BlueprintReadWrite,meta = (AllowPrivateAccess = true))
 	ULagCompensationComponent* LagCompensation;
 	
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
@@ -252,7 +264,7 @@ private:
 	UAnimMontage* GrenadeToss;
 
 	UPROPERTY(EditAnywhere , Category= "Combat")
-	UAnimMontage* Slide;
+	UAnimMontage* SlideMontage;
 
 	UPROPERTY(EditAnywhere , Category= "Combat")
 	UAnimMontage* Swap;
