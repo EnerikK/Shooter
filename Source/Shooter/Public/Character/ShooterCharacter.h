@@ -100,6 +100,7 @@ public:
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const {return AttachedGrenade;}
 	FORCEINLINE ULagCompensationComponent* GetLagCompensation() const {return LagCompensation;}
 	FORCEINLINE UAnimMontage* GetSlideMontage() const {return SlideMontage;}
+	FORCEINLINE UAnimMontage* GetDashMontage() const {return DashMontage;}
 	FORCEINLINE UShooterMovementComponent* GetShooterCharacterComponent() const {return ShooterMovementComponent;}
 
 	FORCEINLINE bool IsHoldingFlag() const;
@@ -113,6 +114,10 @@ public:
 	
 	UPROPERTY()
 	FSlideStartDelegate SlideStartDelegate;
+
+	UPROPERTY()
+	FDashStartDelegate DashStartDelegate;
+	
 	UPROPERTY()
 	FOnLeftGame OnLeftGame;
 
@@ -265,6 +270,9 @@ private:
 
 	UPROPERTY(EditAnywhere , Category= "Combat")
 	UAnimMontage* SlideMontage;
+
+	UPROPERTY(EditAnywhere , Category= "Combat")
+	UAnimMontage* DashMontage;
 
 	UPROPERTY(EditAnywhere , Category= "Combat")
 	UAnimMontage* Swap;

@@ -636,16 +636,16 @@ void AShooterPlayerController::SetupInputComponent()
 	UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(InputComponent);
 	
 	EnhancedInputComponent->BindAction(
-		MoveAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Move);
+	MoveAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Move);
 		
 	EnhancedInputComponent->BindAction(
-		LookAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Look);
+	LookAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Look);
 		
 	EnhancedInputComponent->BindAction(
-		JumpAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Jump);
+	JumpAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Jump);
 
 	EnhancedInputComponent->BindAction(
-		EquipAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Equip);
+	EquipAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Equip);
 
 	EnhancedInputComponent->BindAction(
 	CrouchAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Crouch);
@@ -677,7 +677,10 @@ void AShooterPlayerController::SetupInputComponent()
 	EnhancedInputComponent->BindAction(
 	ShiftPressed,ETriggerEvent::Started,this,&AShooterPlayerController::StartSprint);
 	EnhancedInputComponent->BindAction(
-		ShiftPressed,ETriggerEvent::Completed,this,&AShooterPlayerController::StopSprint);
+	ShiftPressed,ETriggerEvent::Completed,this,&AShooterPlayerController::StopSprint);
+
+	EnhancedInputComponent->BindAction(
+	AltPressed,ETriggerEvent::Triggered,this,&AShooterPlayerController::Dash);
 	
 }
 
@@ -874,6 +877,14 @@ void AShooterPlayerController::StopSprint(const FInputActionValue& Value)
 	if(AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter()))
 	{
 		ControlledCharacter->GetShooterCharacterComponent()->SprintReleased();
+	}
+}
+
+void AShooterPlayerController::Dash(const FInputActionValue& Value)
+{
+	if(AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter()))
+	{
+		ControlledCharacter->GetShooterCharacterComponent()->DashPressed();
 	}
 }
 	

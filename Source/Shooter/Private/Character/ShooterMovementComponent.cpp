@@ -16,6 +16,8 @@ void UShooterMovementComponent::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME_CONDITION(UShooterMovementComponent,Proxy_bSlideStart,COND_SkipOwner);
+	DOREPLIFETIME_CONDITION(UShooterMovementComponent,Proxy_bDashStart,COND_SkipOwner);
+
 
 }
 
@@ -40,7 +42,7 @@ void UShooterMovementComponent::SlidePressed()
 	if(CurrentTime - SlideStartTime >= Slide_CooldownDuration)
 	{
 		bWantsToSlide = true;
-		SetCollisionSizeToSliding(SlideHalfHeight);
+		//SetCollisionSizeToSliding(SlideHalfHeight);
 	}
 	else
 	{
@@ -54,6 +56,25 @@ void UShooterMovementComponent::SlideReleased()
 {
 	GetWorld()->GetTimerManager().ClearTimer(TimerHandle_SlideCooldown);
 	bWantsToSlide = false;
+}
+
+void UShooterMovementComponent::DashPressed()
+{
+	float CurrentTime = GetWorld()->GetTimeSeconds();
+	if(CurrentTime - DashStartTime >= DashCooldown)
+	{
+		bWantsToDash = true;
+	}
+	else
+	{
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle_DashCooldown,this,&UShooterMovementComponent::OnDashCooldownFinished,DashCooldown - (CurrentTime - DashStartTime));
+	}
+}
+
+void UShooterMovementComponent::DashReleased()
+{
+	GetWorld()->GetTimerManager().ClearTimer(TimerHandle_DashCooldown);
+	bWantsToDash = false;
 }
 
 bool UShooterMovementComponent::IsCustomMovementMode(EMovementModeBattleMage InCustomMovementMode) const
@@ -70,12 +91,16 @@ void UShooterMovementComponent::InitializeComponent()
 bool UShooterMovementComponent::FSavedMove_ShooterCharacter::CanCombineWith(const FSavedMovePtr& NewMove,
 	ACharacter* InCharacter, float MaxDelta) const
 {
-	const FSavedMove_ShooterCharacter* NewBattleMageMove = static_cast<FSavedMove_ShooterCharacter*>(NewMove.Get());
-	if(Saved_bWantsToSprint != NewBattleMageMove->Saved_bWantsToSprint)
+	const FSavedMove_ShooterCharacter* NewShooterMove = static_cast<FSavedMove_ShooterCharacter*>(NewMove.Get());
+	if(Saved_bWantsToSprint != NewShooterMove->Saved_bWantsToSprint)
 	{
 		return false;
 	}
-	if(Saved_bWantsToSlide != NewBattleMageMove->Saved_bWantsToSlide)
+	if(Saved_bWantsToSlide != NewShooterMove->Saved_bWantsToSlide)
+	{
+		return false;
+	}
+	if(Saved_bWantsToDash != NewShooterMove->Saved_bWantsToDash)
 	{
 		return false;
 	}
@@ -90,6 +115,7 @@ void UShooterMovementComponent::FSavedMove_ShooterCharacter::Clear()
 	
 	Saved_bWantsToSprint = 0;
 	Saved_bWantsToSlide = 0;
+	Saved_bWantsToDash = 0;
 	Saved_bHadAnimRootMotion = 0;
 }
 
@@ -98,6 +124,7 @@ uint8 UShooterMovementComponent::FSavedMove_ShooterCharacter::GetCompressedFlags
 	uint8 Result = Super::GetCompressedFlags();
 	if(Saved_bWantsToSprint)  Result |= FLAG_Custom_0;
 	if(Saved_bWantsToSlide) Result |= FLAG_Custom_1;
+	if(Saved_bWantsToDash) Result |= Flag_Dash;
 	return  Result;
 }
 
@@ -110,6 +137,7 @@ void UShooterMovementComponent::FSavedMove_ShooterCharacter::SetMoveFor(ACharact
 	Saved_bWantsToSprint = CharacterMovement->bWantsToSprint;
 	Saved_bWantsToSlide = CharacterMovement->bWantsToSlide;
 	Saved_bHadAnimRootMotion = CharacterMovement->bHadAnimRootMotion;
+	Saved_bWantsToDash = CharacterMovement->bWantsToDash;
 }
 
 void UShooterMovementComponent::FSavedMove_ShooterCharacter::PrepMoveFor(ACharacter* C)
@@ -157,9 +185,12 @@ bool UShooterMovementComponent::CanCrouchInCurrentState() const
 void UShooterMovementComponent::UpdateFromCompressedFlags(uint8 Flags)
 {
 	Super::UpdateFromCompressedFlags(Flags);
+	
 	bWantsToSprint = (Flags & FSavedMove_ShooterCharacter::FLAG_Custom_0) != 0;
-	//bwants to slide
+	
 	bWantsToSlide = (Flags & FSavedMove_ShooterCharacter::FLAG_Custom_1) != 0;
+
+	bWantsToDash = (Flags & FSavedMove_ShooterCharacter::Flag_Dash) != 0;
 }
 
 void UShooterMovementComponent::OnMovementUpdated(float DeltaSeconds, const FVector& OldLocation,
@@ -207,6 +238,22 @@ void UShooterMovementComponent::UpdateCharacterStateBeforeMovement(float DeltaSe
 	if(IsSliding() && !bWantsToSlide)
 	{
 		SlideReleased();
+	}
+	
+	/*Dash*/
+	bool bAuthProxyDash = CharacterOwner->HasAuthority() && !CharacterOwner->IsLocallyControlled();
+	if(bWantsToDash && CanDash())
+	{
+		if(bAuthProxyDash || GetWorld()->GetTimeSeconds() - DashStartTime > AuthDashCooldownDuration)
+		{
+			PerformDash();
+			bWantsToDash = false;
+			Proxy_bDashStart = !Proxy_bDashStart;
+		}
+		else
+		{
+			UE_LOG(LogTemp,Warning,TEXT("Cleint tried to dash"));
+		}
 	}
 }
 
@@ -345,4 +392,37 @@ void UShooterMovementComponent::PerformSlide()
 	SetMovementMode(MOVE_Walking);
 	PlayerCharacter->PlayAnimMontage(PlayerCharacter->GetSlideMontage());
 	SlideStartDelegate.Broadcast();
+}
+
+void UShooterMovementComponent::OnRep_DashStart()
+{
+	if(Proxy_bDashStart)
+	{
+		DashStartDelegate.Broadcast();
+	}
+}
+
+bool UShooterMovementComponent::CanDash() const
+{
+	return IsWalking() && !IsCrouching();
+}
+
+void UShooterMovementComponent::PerformDash()
+{
+	DashStartTime = GetWorld()->GetTimeSeconds();
+	FVector DashDirection = (Acceleration.IsNearlyZero() ? UpdatedComponent->GetForwardVector() : Acceleration).GetSafeNormal2D();
+	DashDirection += FVector::UpVector * .1f;
+	Velocity = DashImpulse * DashDirection;
+
+	FQuat NewRotation = FRotationMatrix::MakeFromXZ(DashDirection,FVector::UpVector).ToQuat();
+	FHitResult HitResult;
+	SafeMoveUpdatedComponent(FVector::ZeroVector,NewRotation,false,HitResult);
+	SetMovementMode(MOVE_Falling);
+	PlayerCharacter->PlayAnimMontage(PlayerCharacter->GetDashMontage());
+	DashStartDelegate.Broadcast();
+}
+
+void UShooterMovementComponent::OnDashCooldownFinished()
+{
+	bWantsToDash = true;
 }

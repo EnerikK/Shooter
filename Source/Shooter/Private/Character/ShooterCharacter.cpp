@@ -188,6 +188,7 @@ void AShooterCharacter::BeginPlay()
 	UpdateHudHealth();
 	UpdateHudShield();
 	SlideStartDelegate.Broadcast();
+	//DashStartDelegate.Broadcast();
 	if(HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this,&AShooterCharacter::ReceiveDamage);
