@@ -50,17 +50,19 @@ public:
 	void PlayElimMontage();
 	void PlayHitReactMontage();
 	void PlayThrowGrenadeMontage() const;
-
 	
+	/*Hud*/
 	void UpdateHudHealth();
 	void UpdateHudShield();
 	void UpdateHudAmmo();
-	
+
+	/*Eliminated*/
 	void Elim(bool bPlayerLeftGame);
 	UFUNCTION(NetMulticast,Reliable)
 	void MulticastElim(bool bPlayerLeftGame);
 	void RotateInPlace(float DeltaTime);
-	
+
+	/*Buttons*/
 	void EquipButtonPressed();
 	void CrouchButtonPressed();
 	void AimButtonPressed();
@@ -69,17 +71,30 @@ public:
 	void FireButtonReleased();
 	void ReloadButtonPressed();
 	void GrenadeButtonPressed();
-	
+
+	/*Weapons*/
 	void SetOverlappingWeapon(AWeapon* Weapon);
 	bool IsWeaponEquipped();
+	bool IsLocallyReloading();
+	void SpawnDefaultWeapon();
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowSniperScopeWidget(bool bShowScope);
+
+	/*Character*/
 	bool IsAiming();
 	bool IsCrouching();
 	bool IsSliding();
 	bool bFinishedSwapping = false;
-	UFUNCTION(BlueprintImplementableEvent)
-	void ShowSniperScopeWidget(bool bShowScope);
-	void SpawnDefaultWeapon();
+	bool bPressedShooterJump;
+	virtual void Jump() override;
+	virtual void StopJumping() override;
+	FCollisionQueryParams GetIgnoredParams()const;
+	
+	/*Teams*/
 	void SetTeamColor(ETeam Team);
+	void SetHoldingFlag(bool bHolding);
+	ECombatState GetCombatState() const;
+	ETeam GetTeam();
 	
 	FORCEINLINE float GetAO_Yaw() const {return AO_Yaw;}
 	FORCEINLINE float GetAO_Pitch() const {return  AO_Pitch;}
@@ -102,16 +117,9 @@ public:
 	FORCEINLINE UAnimMontage* GetSlideMontage() const {return SlideMontage;}
 	FORCEINLINE UAnimMontage* GetDashMontage() const {return DashMontage;}
 	FORCEINLINE UShooterMovementComponent* GetShooterCharacterComponent() const {return ShooterMovementComponent;}
-
 	FORCEINLINE bool IsHoldingFlag() const;
-
-	void SetHoldingFlag(bool bHolding);
 	
-	ECombatState GetCombatState() const;
-	bool IsLocallyReloading();
-
-	ETeam GetTeam();
-	
+	/*Delegates*/
 	UPROPERTY()
 	FSlideStartDelegate SlideStartDelegate;
 
@@ -120,8 +128,7 @@ public:
 	
 	UPROPERTY()
 	FOnLeftGame OnLeftGame;
-
-
+	
 	/*Hit Boxes used for server-side rewind*/
 
 	UPROPERTY(EditAnywhere)
@@ -175,14 +182,19 @@ public:
 	UPROPERTY(EditAnywhere)
 	TMap<FName,UBoxComponent*> HitCollisionBoxes;
 
+	
 	UFUNCTION(Server,Reliable)
 	void ServerLeaveGame();
-
-
 	UFUNCTION(NetMulticast,Reliable)
 	void MulticastGainedTheLead();
 	UFUNCTION(NetMulticast,Reliable)
 	void MulticastLostTheLead();
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* Health3D;
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* Shield3D;
 
 protected:
 	
@@ -200,8 +212,7 @@ protected:
 
 private:
 	
-	UPROPERTY(BlueprintReadOnly,EditDefaultsOnly,Category=Movement,meta=(AllowPrivateAccess = true))
-	UShooterMovementComponent* ShooterMovementComponent;
+	
 
 	UPROPERTY()
 	AShooterPlayerState* ShooterPlayerState;
@@ -219,11 +230,16 @@ private:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = true))
 	UCombatComponent* Combat;
 
+
+
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite,meta = (AllowPrivateAccess = true))
 	UBuffComponent* Buff;
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite,meta = (AllowPrivateAccess = true))
 	ULagCompensationComponent* LagCompensation;
+
+	UPROPERTY(BlueprintReadOnly,EditDefaultsOnly,Category=Movement,meta=(AllowPrivateAccess = true))
+	UShooterMovementComponent* ShooterMovementComponent;
 	
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
 	AWeapon* OverlappingWeapon;
@@ -345,6 +361,8 @@ private:
 	UPROPERTY(EditAnywhere,Category="Elimination")
 	UMaterialInstance* OriginalMaterial;
 
+	
+
 	//Timer
 	FTimerHandle ElimTimer;
 
@@ -367,3 +385,14 @@ private:
 	UPROPERTY()
 	AShooterGameModeBase* ShooterGameMode;
 };
+
+inline FCollisionQueryParams AShooterCharacter::GetIgnoredParams() const
+{
+	FCollisionQueryParams Params;
+
+	TArray<AActor*> CharacterChildren;
+	GetAllChildActors(CharacterChildren);
+	Params.AddIgnoredActors(CharacterChildren);
+	Params.AddIgnoredActor(this);
+	return Params;
+}

@@ -122,6 +122,13 @@ class SHOOTER_API UShooterMovementComponent : public UCharacterMovementComponent
 	bool bHadAnimRootMotion;
 	bool bTransitionFinished;
 	
+	TSharedPtr<FRootMotionSource_MoveToForce> TransitionRMS;
+	UPROPERTY(Transient)
+	UAnimMontage* TransitionQueuedMontage;
+	FString TransitionName;
+	float TransitionQueuedMontageSpeed;
+	int TransitionRMS_ID;
+	
 	float SlideStartTime;
 	float DashStartTime;
 
@@ -143,6 +150,11 @@ class SHOOTER_API UShooterMovementComponent : public UCharacterMovementComponent
 	UPROPERTY(ReplicatedUsing = OnRep_DashStart)
 	bool Proxy_bDashStart;
 
+	UPROPERTY(ReplicatedUsing= OnRep_ShortMantle)
+	bool Proxy_bShortMantle;
+	UPROPERTY(ReplicatedUsing = OnRep_TallMantle)
+	bool Proxy_bTallMantle;
+
 public:
 
 	/*Sprint*/
@@ -158,6 +170,7 @@ public:
 	virtual bool CanCrouchInCurrentState() const override;
 
 	FORCEINLINE bool IsSliding() const {return IsCustomMovementMode(BMove_Slide);}
+	
 
 	UFUNCTION()
 	void SprintPressed();
@@ -182,6 +195,11 @@ public:
 
 	UFUNCTION(BlueprintPure)
 	bool IsCustomMovementMode(EMovementModeBattleMage InCustomMovementMode) const;
+
+	UFUNCTION(BlueprintPure)
+	bool IsMovementMode(EMovementMode InMovementMode) const;
+	
+
 
 protected:
 	UPROPERTY(Transient)
@@ -212,7 +230,18 @@ private:
 	bool CanDash() const;
 	void PerformDash();
 	void OnDashCooldownFinished();
-	
+
+	/*Mantle*/
+	bool TryMantle();
+	FVector GetMantleStartLocation(FHitResult FrontHit, FHitResult SurfaceHit, bool bTallMantle) const;
+	UFUNCTION()
+	void OnRep_ShortMantle();
+	UFUNCTION()
+	void OnRep_TallMantle();
+
+	bool IsServer() const;
+	float CapR() const;
+	float CapHH() const;
 		
 };
 

@@ -2,10 +2,10 @@
 
 
 #include "Character/ShooterMovementComponent.h"
-
 #include "Character/ShooterCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "DrawDebugHelpers.h"
 
 UShooterMovementComponent::UShooterMovementComponent()
 {
@@ -17,6 +17,9 @@ void UShooterMovementComponent::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME_CONDITION(UShooterMovementComponent,Proxy_bSlideStart,COND_SkipOwner);
 	DOREPLIFETIME_CONDITION(UShooterMovementComponent,Proxy_bDashStart,COND_SkipOwner);
+	DOREPLIFETIME_CONDITION(UShooterMovementComponent,Proxy_bShortMantle,COND_SkipOwner);
+	DOREPLIFETIME_CONDITION(UShooterMovementComponent,Proxy_bTallMantle,COND_SkipOwner);
+	
 
 
 }
@@ -81,6 +84,12 @@ bool UShooterMovementComponent::IsCustomMovementMode(EMovementModeBattleMage InC
 {
 	return MovementMode == MOVE_Custom && CustomMovementMode == InCustomMovementMode;
 }
+
+bool UShooterMovementComponent::IsMovementMode(EMovementMode InMovementMode) const
+{
+	return InMovementMode == MovementMode;
+}
+
 void UShooterMovementComponent::InitializeComponent()
 {
 	Super::InitializeComponent();
@@ -111,11 +120,11 @@ bool UShooterMovementComponent::FSavedMove_ShooterCharacter::CanCombineWith(cons
 void UShooterMovementComponent::FSavedMove_ShooterCharacter::Clear()
 {
 	FSavedMove_Character::Clear();
-	FSavedMove_Character::Clear();
 	
 	Saved_bWantsToSprint = 0;
 	Saved_bWantsToSlide = 0;
 	Saved_bWantsToDash = 0;
+	Saved_bPressedShooterJump = 0;
 	Saved_bHadAnimRootMotion = 0;
 }
 
@@ -125,6 +134,7 @@ uint8 UShooterMovementComponent::FSavedMove_ShooterCharacter::GetCompressedFlags
 	if(Saved_bWantsToSprint)  Result |= FLAG_Custom_0;
 	if(Saved_bWantsToSlide) Result |= FLAG_Custom_1;
 	if(Saved_bWantsToDash) Result |= Flag_Dash;
+	if(Saved_bPressedShooterJump) Result |= FLAG_JumpPressed;
 	return  Result;
 }
 
@@ -138,6 +148,7 @@ void UShooterMovementComponent::FSavedMove_ShooterCharacter::SetMoveFor(ACharact
 	Saved_bWantsToSlide = CharacterMovement->bWantsToSlide;
 	Saved_bHadAnimRootMotion = CharacterMovement->bHadAnimRootMotion;
 	Saved_bWantsToDash = CharacterMovement->bWantsToDash;
+	Saved_bPressedShooterJump = CharacterMovement->PlayerCharacter->bPressedShooterJump;
 }
 
 void UShooterMovementComponent::FSavedMove_ShooterCharacter::PrepMoveFor(ACharacter* C)
@@ -147,6 +158,7 @@ void UShooterMovementComponent::FSavedMove_ShooterCharacter::PrepMoveFor(ACharac
 	CharacterMovement->bWantsToSprint = Saved_bWantsToSprint;
 	CharacterMovement->bWantsToSlide = Saved_bWantsToSlide;
 	CharacterMovement->bHadAnimRootMotion = Saved_bHadAnimRootMotion;
+	CharacterMovement->PlayerCharacter->bPressedShooterJump = Saved_bPressedShooterJump;
 }
 
 UShooterMovementComponent::FNetworkPredictionData_Client_ShooterCharacter::
@@ -218,10 +230,9 @@ void UShooterMovementComponent::PhysCustom(float deltaTime, int32 Iterations)
 
 void UShooterMovementComponent::UpdateCharacterStateBeforeMovement(float DeltaSeconds)
 {
-	Super::UpdateCharacterStateBeforeMovement(DeltaSeconds);
 	/*Slide*/
 	
-	bool bAuthProxy = CharacterOwner->HasAuthority() && !CharacterOwner->IsLocallyControlled();
+	/*bool bAuthProxy = CharacterOwner->HasAuthority() && !CharacterOwner->IsLocallyControlled();
 	if(bWantsToSlide && CanSlide())
 	{
 		if(!bAuthProxy || GetWorld()->GetTimeSeconds() - SlideStartTime > AuthSlideCooldownDuration)
@@ -238,7 +249,7 @@ void UShooterMovementComponent::UpdateCharacterStateBeforeMovement(float DeltaSe
 	if(IsSliding() && !bWantsToSlide)
 	{
 		SlideReleased();
-	}
+	}*/
 	
 	/*Dash*/
 	bool bAuthProxyDash = CharacterOwner->HasAuthority() && !CharacterOwner->IsLocallyControlled();
@@ -255,11 +266,79 @@ void UShooterMovementComponent::UpdateCharacterStateBeforeMovement(float DeltaSe
 			UE_LOG(LogTemp,Warning,TEXT("Cleint tried to dash"));
 		}
 	}
+	if(PlayerCharacter->bPressedShooterJump)
+	{
+		if(TryMantle())
+		{
+			PlayerCharacter->StopJumping();
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Yellow,TEXT("FailedToMantle,Reverting To Jump"));
+			PlayerCharacter->bPressedShooterJump = false;
+			PlayerCharacter->bPressedJump = true;
+			PlayerCharacter->CheckJumpInput(DeltaSeconds);
+		}
+	}
+	
+	if (PlayerCharacter->bPressedShooterJump)
+	{
+		GEngine->AddOnScreenDebugMessage(-4,5.f,FColor::Red,TEXT("Trying Zippyjump"));
+		if (TryMantle())
+		{
+			PlayerCharacter->StopJumping();		
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-3,5.f,FColor::Red,TEXT("Failed Mantle, Reverting to jump"));
+			PlayerCharacter->bPressedShooterJump = false;
+			CharacterOwner->bPressedJump = true;
+			CharacterOwner->CheckJumpInput(DeltaSeconds);
+			bOrientRotationToMovement = true;
+		}
+	}
+	if (bTransitionFinished)
+	{
+		GEngine->AddOnScreenDebugMessage(-3,5.f,FColor::Red,TEXT("Transition Finished"));
+		UE_LOG(LogTemp, Warning, TEXT("FINISHED RM"))
+		if (TransitionName == "Mantle")
+		{
+			if (IsValid(TransitionQueuedMontage))
+			{
+				SetMovementMode(MOVE_Flying);
+				CharacterOwner->PlayAnimMontage(TransitionQueuedMontage, TransitionQueuedMontageSpeed);
+				TransitionQueuedMontageSpeed = 0.f;
+				TransitionQueuedMontage = nullptr;
+			}
+			else
+			{
+				SetMovementMode(MOVE_Walking);
+			}
+			bTransitionFinished = false;
+		}
+	}
+
+
+	Super::UpdateCharacterStateBeforeMovement(DeltaSeconds);
+
 }
 
 void UShooterMovementComponent::UpdateCharacterStateAfterMovement(float DeltaSeconds)
 {
 	Super::UpdateCharacterStateAfterMovement(DeltaSeconds);
+	if (!HasAnimRootMotion() && bHadAnimRootMotion && IsMovementMode(MOVE_Flying))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Ending Anim Root Motion"))
+		SetMovementMode(MOVE_Walking);
+	}
+
+	if (GetRootMotionSourceByID(TransitionRMS_ID) && GetRootMotionSourceByID(TransitionRMS_ID)->Status.HasFlag(ERootMotionSourceStatusFlags::Finished))
+	{
+		RemoveRootMotionSourceByID(TransitionRMS_ID);
+		bHadAnimRootMotion = true;
+	}
+	
+	bHadAnimRootMotion = HasAnimRootMotion();
 }
 
 void UShooterMovementComponent::SetCollisionSizeToSliding(float Size)
@@ -396,10 +475,8 @@ void UShooterMovementComponent::PerformSlide()
 
 void UShooterMovementComponent::OnRep_DashStart()
 {
-	if(Proxy_bDashStart)
-	{
-		DashStartDelegate.Broadcast();
-	}
+	PlayerCharacter->PlayAnimMontage(PlayerCharacter->GetDashMontage());
+	DashStartDelegate.Broadcast();
 }
 
 bool UShooterMovementComponent::CanDash() const
@@ -410,13 +487,6 @@ bool UShooterMovementComponent::CanDash() const
 void UShooterMovementComponent::PerformDash()
 {
 	DashStartTime = GetWorld()->GetTimeSeconds();
-	FVector DashDirection = (Acceleration.IsNearlyZero() ? UpdatedComponent->GetForwardVector() : Acceleration).GetSafeNormal2D();
-	DashDirection += FVector::UpVector * .1f;
-	Velocity = DashImpulse * DashDirection;
-
-	FQuat NewRotation = FRotationMatrix::MakeFromXZ(DashDirection,FVector::UpVector).ToQuat();
-	FHitResult HitResult;
-	SafeMoveUpdatedComponent(FVector::ZeroVector,NewRotation,false,HitResult);
 	SetMovementMode(MOVE_Falling);
 	PlayerCharacter->PlayAnimMontage(PlayerCharacter->GetDashMontage());
 	DashStartDelegate.Broadcast();
@@ -425,4 +495,171 @@ void UShooterMovementComponent::PerformDash()
 void UShooterMovementComponent::OnDashCooldownFinished()
 {
 	bWantsToDash = true;
+}
+
+bool UShooterMovementComponent::TryMantle()
+{
+	if (!(IsMovementMode(MOVE_Walking) && !IsCrouching()) && !IsMovementMode(MOVE_Falling)) return false;
+	FVector BaseLoc = UpdatedComponent->GetComponentLocation() + FVector::DownVector * CapHH();
+	FVector Fwd = UpdatedComponent->GetForwardVector().GetSafeNormal2D();
+	auto Params = PlayerCharacter->GetIgnoredParams();
+	float MaxHeight = CapHH() * 2+ MantleReachHeight;
+	float CosMMWSA = FMath::Cos(FMath::DegreesToRadians(MantleMinWallSteepnessAngle));
+	float CosMMSA = FMath::Cos(FMath::DegreesToRadians(MantleMaxSurfaceAngle));
+	float CosMMAA = FMath::Cos(FMath::DegreesToRadians(MantleMaxAlignmentAngle));
+	
+	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Blue,TEXT("TriedToMantle"));
+
+	// Check Front Face
+	FHitResult FrontHit;
+	float CheckDistance = FMath::Clamp(Velocity | Fwd, CapR() + 30, MantleMaxDistance);
+	FVector FrontStart = BaseLoc + FVector::UpVector * (MaxStepHeight - 1);
+	for (int i = 0; i < 6; i++)
+	{
+		DrawDebugLine(GetWorld(),FrontStart,FrontStart + Fwd * CheckDistance,FColor::Green,true,4.f,1,1.f);
+		if (GetWorld()->LineTraceSingleByProfile(FrontHit, FrontStart, FrontStart + Fwd * CheckDistance, "BlockAll", Params)) break;
+		FrontStart += FVector::UpVector * (2.f * CapHH() - (MaxStepHeight - 1)) / 5;
+	}
+	if (!FrontHit.IsValidBlockingHit()) return false;
+	float CosWallSteepnessAngle = FrontHit.Normal | FVector::UpVector;
+	if (FMath::Abs(CosWallSteepnessAngle) > CosMMWSA || (Fwd | -FrontHit.Normal) < CosMMAA) return false;
+	
+	DrawDebugPoint(GetWorld(),FrontHit.Location,10.f,FColor::Red);
+
+	// Check Height
+	TArray<FHitResult> HeightHits;
+	FHitResult SurfaceHit;
+	FVector WallUp = FVector::VectorPlaneProject(FVector::UpVector, FrontHit.Normal).GetSafeNormal();
+	float WallCos = FVector::UpVector | FrontHit.Normal;
+	float WallSin = FMath::Sqrt(1 - WallCos * WallCos);
+	FVector TraceStart = FrontHit.Location + Fwd + WallUp * (MaxHeight - (MaxStepHeight - 1)) / WallSin;
+	
+	DrawDebugLine(GetWorld(),TraceStart, FrontHit.Location + Fwd, FColor::Orange);
+	
+	if (!GetWorld()->LineTraceMultiByProfile(HeightHits, TraceStart, FrontHit.Location + Fwd, "BlockAll", Params)) return false;
+	for (const FHitResult& Hit : HeightHits)
+	{
+		if (Hit.IsValidBlockingHit())
+		{
+			SurfaceHit = Hit;
+			break;
+		}
+	}
+	if (!SurfaceHit.IsValidBlockingHit() || (SurfaceHit.Normal | FVector::UpVector) < CosMMSA) return false;
+	float Height = (SurfaceHit.Location - BaseLoc) | FVector::UpVector;
+	
+	GEngine->AddOnScreenDebugMessage(1,3,FColor::Yellow,FString::Printf(TEXT("Height : %f"),Height));
+	DrawDebugPoint(GetWorld(),SurfaceHit.Location,10.f, FColor::Blue);
+
+	// Check Clearance
+	float SurfaceCos = FVector::UpVector | SurfaceHit.Normal;
+	float SurfaceSin = FMath::Sqrt(1 - SurfaceCos * SurfaceCos);
+	FVector ClearCapLoc = SurfaceHit.Location + Fwd * CapR() + FVector::UpVector * (CapHH() + 1 + CapR() * 2 * SurfaceSin);
+	FCollisionShape CapShape = FCollisionShape::MakeCapsule(CapR(), CapHH());
+	if (GetWorld()->OverlapAnyTestByProfile(ClearCapLoc, FQuat::Identity, "BlockAll", CapShape, Params))
+	{
+		DrawDebugCapsule(GetWorld(),ClearCapLoc,CapHH(),CapR(),FQuat::Identity,FColor::Red,true,3.f);
+		return false;
+	}
+	else
+	{
+		DrawDebugCapsule(GetWorld(),ClearCapLoc,CapHH(),CapR(),FQuat::Identity,FColor::Green,true,3.f);
+		
+		GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Black,TEXT("CanMantle"));
+	
+	}
+
+	// Mantle Selection
+	FVector ShortMantleTarget = GetMantleStartLocation(FrontHit, SurfaceHit, false);
+	FVector TallMantleTarget = GetMantleStartLocation(FrontHit, SurfaceHit, true);
+	
+	bool bTallMantle = false;
+	if (IsMovementMode(MOVE_Walking) && Height > CapHH() * 2)
+		bTallMantle = true;
+	else if (IsMovementMode(MOVE_Falling) && (Velocity | FVector::UpVector) < 0)
+	{
+		if (!GetWorld()->OverlapAnyTestByProfile(TallMantleTarget, FQuat::Identity, "BlockAll", CapShape, Params))
+			bTallMantle = true;
+	}
+	FVector TransitionTarget = bTallMantle ? TallMantleTarget : ShortMantleTarget;
+	DrawDebugCapsule(GetWorld(),TransitionTarget,CapHH(),CapR(),FQuat::Identity,FColor::Yellow,true,3.f);
+
+	DrawDebugCapsule(GetWorld(),UpdatedComponent->GetComponentLocation(),CapHH(),CapR(),FQuat::Identity,FColor::Red,true,3.f);
+
+	float UpSpeed = Velocity | FVector::UpVector;
+	float TransDistance = FVector::Dist(TransitionTarget, UpdatedComponent->GetComponentLocation());
+
+	TransitionQueuedMontageSpeed = FMath::GetMappedRangeValueClamped(FVector2D(-500, 750), FVector2D(.9f, 1.2f), UpSpeed);
+	TransitionRMS.Reset();
+	TransitionRMS = MakeShared<FRootMotionSource_MoveToForce>();
+	TransitionRMS->AccumulateMode = ERootMotionAccumulateMode::Override;
+	
+	TransitionRMS->Duration = FMath::Clamp(TransDistance / 500.f, .1f, .25f);
+	GEngine->AddOnScreenDebugMessage(3,5.f,FColor::Green,FString::Printf(TEXT("Duration : %f"),TransitionRMS->Duration));
+	TransitionRMS->StartLocation = UpdatedComponent->GetComponentLocation();
+	TransitionRMS->TargetLocation = TransitionTarget;
+
+	// Apply Transition Root Motion Source
+	Velocity = FVector::ZeroVector;
+	SetMovementMode(MOVE_Flying);
+	TransitionRMS_ID = ApplyRootMotionSource(TransitionRMS);
+	TransitionName = "Mantle";
+
+	// Animations
+	if (bTallMantle)
+	{
+		TransitionQueuedMontage = TallMantleMontage;
+		CharacterOwner->PlayAnimMontage(TransitionTallMantleMontage, 1 / TransitionRMS->Duration);
+		if (IsServer()) Proxy_bTallMantle = !Proxy_bTallMantle;
+	}
+	else
+	{
+		TransitionQueuedMontage = ShortMantleMontage;
+		CharacterOwner->PlayAnimMontage(TransitionShortMantleMontage, 1 / TransitionRMS->Duration);
+		if (IsServer()) Proxy_bShortMantle = !Proxy_bShortMantle;
+	}
+	return true;
+
+}
+
+FVector UShooterMovementComponent::GetMantleStartLocation(FHitResult FrontHit, FHitResult SurfaceHit,
+	bool bTallMantle) const
+{
+	float CosWallSteepnessAngle = FrontHit.Normal | FVector::UpVector;
+	float DownDistance = bTallMantle ? CapHH() * 2.f : MaxStepHeight - 1;
+	FVector EdgeTangent = FVector::CrossProduct(SurfaceHit.Normal, FrontHit.Normal).GetSafeNormal();
+
+	FVector MantleStart = SurfaceHit.Location;
+	MantleStart += FrontHit.Normal.GetSafeNormal2D() * (2.f + CapR());
+	MantleStart += UpdatedComponent->GetForwardVector().GetSafeNormal2D().ProjectOnTo(EdgeTangent) * CapR() * .3f;
+	MantleStart += FVector::UpVector * CapHH();
+	MantleStart += FVector::DownVector * DownDistance;
+	MantleStart += FrontHit.Normal.GetSafeNormal2D() * CosWallSteepnessAngle * DownDistance;
+
+	return MantleStart;
+}
+
+void UShooterMovementComponent::OnRep_ShortMantle()
+{
+	PlayerCharacter->PlayAnimMontage(ProxyShortMantleMontage);
+}
+
+void UShooterMovementComponent::OnRep_TallMantle()
+{
+	PlayerCharacter->PlayAnimMontage(ProxyTallMantleMontage);
+}
+
+bool UShooterMovementComponent::IsServer() const
+{
+	return PlayerCharacter->HasAuthority();
+}
+
+float UShooterMovementComponent::CapR() const
+{
+	return PlayerCharacter->GetCapsuleComponent()->GetScaledCapsuleRadius();
+}
+
+float UShooterMovementComponent::CapHH() const
+{
+	return PlayerCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 }

@@ -66,9 +66,18 @@ AShooterCharacter::AShooterCharacter(const FObjectInitializer& ObjectInitializer
 	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimeLineComponent"));
 
 	AttachedGrenade = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("AttachedGrenade"));
-	AttachedGrenade->SetupAttachment(GetMesh(),FName("Grenade_Socket"));
+	AttachedGrenade->SetupAttachment(GetMesh());
 	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	Health3D = CreateDefaultSubobject<UStaticMeshComponent>("3DHealth");
+	Health3D->SetupAttachment(GetMesh());
+	Health3D->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	Shield3D = CreateDefaultSubobject<UStaticMeshComponent>("3DShield");
+	Shield3D->SetupAttachment(GetMesh());
+	Shield3D->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	
 	/*Hit Boxes for server-side-rewind*/
 	Head = CreateDefaultSubobject<UBoxComponent>(TEXT("head"));
 	Head->SetupAttachment(GetMesh(),FName("head"));
@@ -188,7 +197,7 @@ void AShooterCharacter::BeginPlay()
 	UpdateHudHealth();
 	UpdateHudShield();
 	SlideStartDelegate.Broadcast();
-	//DashStartDelegate.Broadcast();
+	DashStartDelegate.Broadcast();
 	if(HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this,&AShooterCharacter::ReceiveDamage);
@@ -696,6 +705,20 @@ bool AShooterCharacter::IsSliding()
 		}
 	}
 }
+
+ void AShooterCharacter::Jump()
+ {
+	 Super::Jump();
+	bPressedShooterJump = true;
+	bPressedJump = false;
+ }
+
+ void AShooterCharacter::StopJumping()
+ {
+	 Super::StopJumping();
+	bPressedShooterJump = false;
+ }
+
 void AShooterCharacter::SetTeamColor(ETeam Team)
 {
 	if(GetMesh() == nullptr || OriginalMaterial == nullptr) return;

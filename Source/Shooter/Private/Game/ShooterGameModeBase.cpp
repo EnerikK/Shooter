@@ -63,6 +63,7 @@ void AShooterGameModeBase::Tick(float DeltaSeconds)
 		CountdownTime = CooldownTime + InterventionTime + MatchTime - GetWorld()->GetTimeSeconds()+LevelStartingTime;
 		if(CountdownTime < 0.f)
 		{
+			
 			RestartGame();
 		}
 	}

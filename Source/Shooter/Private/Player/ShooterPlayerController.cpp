@@ -236,10 +236,12 @@ void AShooterPlayerController::SetHudHealth(float Health, float MaxHealth)
 {
 	ShooterHUD = ShooterHUD == nullptr ? Cast<AShooterHUD>(GetHUD()) : ShooterHUD;
 	bool bHudValid = ShooterHUD && ShooterHUD->HudOverlay && ShooterHUD->HudOverlay->HealthBar && ShooterHUD->HudOverlay->HealthText;
+	AShooterCharacter* ControlledCharacter = Cast<AShooterCharacter>(GetCharacter());
 	if(bHudValid)
 	{
 		const float HealthPercent = Health/MaxHealth;
 		ShooterHUD->HudOverlay->HealthBar->SetPercent(HealthPercent);
+		
 		FString HealthText = FString::Printf(TEXT("%d/%d"),FMath::CeilToInt(Health),FMath::CeilToInt(MaxHealth));
 		ShooterHUD->HudOverlay->HealthText->SetText(FText::FromString(HealthText));
 	}
@@ -642,7 +644,7 @@ void AShooterPlayerController::SetupInputComponent()
 	LookAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Look);
 		
 	EnhancedInputComponent->BindAction(
-	JumpAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Jump);
+	JumpAction,ETriggerEvent::Started,this,&AShooterPlayerController::Jump);
 
 	EnhancedInputComponent->BindAction(
 	EquipAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Equip);
@@ -669,7 +671,7 @@ void AShooterPlayerController::SetupInputComponent()
 	GrenadeToss,ETriggerEvent::Triggered,this,&AShooterPlayerController::Toss);
 	
 	EnhancedInputComponent->BindAction(
-	SlideAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Slide);
+	SlideAction,ETriggerEvent::Started,this,&AShooterPlayerController::Slide);
 
 	EnhancedInputComponent->BindAction(
 	QuitAction,ETriggerEvent::Triggered,this,&AShooterPlayerController::Quit);
@@ -680,7 +682,7 @@ void AShooterPlayerController::SetupInputComponent()
 	ShiftPressed,ETriggerEvent::Completed,this,&AShooterPlayerController::StopSprint);
 
 	EnhancedInputComponent->BindAction(
-	AltPressed,ETriggerEvent::Triggered,this,&AShooterPlayerController::Dash);
+	AltPressed,ETriggerEvent::Started,this,&AShooterPlayerController::Dash);
 	
 }
 
