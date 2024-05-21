@@ -266,21 +266,6 @@ void UShooterMovementComponent::UpdateCharacterStateBeforeMovement(float DeltaSe
 			UE_LOG(LogTemp,Warning,TEXT("Cleint tried to dash"));
 		}
 	}
-	if(PlayerCharacter->bPressedShooterJump)
-	{
-		if(TryMantle())
-		{
-			PlayerCharacter->StopJumping();
-		}
-		else
-		{
-			GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Yellow,TEXT("FailedToMantle,Reverting To Jump"));
-			PlayerCharacter->bPressedShooterJump = false;
-			PlayerCharacter->bPressedJump = true;
-			PlayerCharacter->CheckJumpInput(DeltaSeconds);
-		}
-	}
-	
 	if (PlayerCharacter->bPressedShooterJump)
 	{
 		GEngine->AddOnScreenDebugMessage(-4,5.f,FColor::Red,TEXT("Trying Zippyjump"));
